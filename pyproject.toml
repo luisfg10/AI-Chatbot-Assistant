@@ -1,0 +1,14 @@
+[project]
+name = "ai-chatbot-assistant"
+version = "0.0.1"
+description = "Project based on building a framework-less agentic AI chatbot assistant to solve common questions and tasks."
+readme = "README.md"
+requires-python = ">=3.13.0"
+dependencies = [
+    "python-dotenv>=1.2.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.0",
+]
