@@ -12,3 +12,42 @@ dependencies = [
 dev = [
     "ruff>=0.15.0",
 ]
+
+# Linting configuration
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes  
+    "I",     # isort (import sorting)
+    "N",     # pep8-naming conventions
+    "W",     # pycodestyle warnings
+    "ANN",   # flake8-annotations (type hints)
+    "D",     # pydocstyle (docstrings)
+    "UP",    # pyupgrade (modern Python)
+    "B",     # flake8-bugbear (common bugs)
+    "E402",  # Module level import not at top of file (allow imports after docstrings and comments)
+]
+
+ignore = [
+    "E501",    # Line too long (formatter handles this)
+    "ANN101",  # Missing type annotation for self in method
+    "ANN102",  # Missing type annotation for cls in classmethod
+    "D203",    # One blank line before class (conflicts with D211)
+    "D213",    # Multi-line docstring summary second line (conflicts with D212)
+]
+
+# Docstring style (choose one: google, numpy, or pep257)
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# Import sorting
+[tool.ruff.lint.isort]
+known-first-party = ["your_package_name"]
+
+# Formatting (double quotes)
+[tool.ruff.format]
+quote-style = "double"
