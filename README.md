@@ -34,6 +34,9 @@ source .venv/bin/activate
 
 # Install dependencies
 uv sync
+
+# Add a dependency (e.g., pandas)
+uv add pandas
 ```
 
 ## Linting and Formatting

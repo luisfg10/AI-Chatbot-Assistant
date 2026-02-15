@@ -3,6 +3,7 @@ __pycache__/
 .vscode/
 .venv/
 .ruff_cache/
+temp/
 
 # specific files
 .env

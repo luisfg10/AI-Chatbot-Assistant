@@ -5,6 +5,8 @@ description = "Project based on building a framework-less agentic AI chatbot ass
 readme = "README.md"
 requires-python = ">=3.13.0"
 dependencies = [
+    "loguru>=0.7.3",
+    "openai>=2.21.0",
     "python-dotenv>=1.2.1",
 ]
 
@@ -13,7 +15,7 @@ dev = [
     "ruff>=0.15.0",
 ]
 
-# Linting configuration
+# Linting configuration with Ruff
 [tool.ruff]
 line-length = 88
 target-version = "py313"
@@ -34,10 +36,9 @@ select = [
 
 ignore = [
     "E501",    # Line too long (formatter handles this)
-    "ANN101",  # Missing type annotation for self in method
-    "ANN102",  # Missing type annotation for cls in classmethod
     "D203",    # One blank line before class (conflicts with D211)
     "D213",    # Multi-line docstring summary second line (conflicts with D212)
+    "I001",    # isort: too strict on import sorting
 ]
 
 # Docstring style (choose one: google, numpy, or pep257)
@@ -46,8 +47,12 @@ convention = "numpy"
 
 # Import sorting
 [tool.ruff.lint.isort]
-known-first-party = ["your_package_name"]
+known-first-party = ["config", "chatbot", "app"]
 
 # Formatting (double quotes)
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.ruff.lint.per-file-ignores]
+# Allow missing module docstrings everywhere except __init__.py
+"!__init__.py" = ["D100"]

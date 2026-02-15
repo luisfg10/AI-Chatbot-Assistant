@@ -1,0 +1,17 @@
+{
+    "default provider": "gemini",
+    "default temperature": 0,
+    "available providers": {
+        "gemini": {
+            "available models": [
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
+                "gemini-2.0-flash",
+                "gemini-2.0-flash-lite"
+            ],
+            "default model": "gemini-2.5-flash"
+        }
+
+    }
+    
+}
