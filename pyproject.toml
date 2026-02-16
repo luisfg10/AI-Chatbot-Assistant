@@ -8,10 +8,12 @@ dependencies = [
     "loguru>=0.7.3",
     "openai>=2.21.0",
     "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
 dev = [
+    "pytest>=9.0.2",
     "ruff>=0.15.0",
 ]
 
@@ -39,6 +41,7 @@ ignore = [
     "D203",    # One blank line before class (conflicts with D211)
     "D213",    # Multi-line docstring summary second line (conflicts with D212)
     "I001",    # isort: too strict on import sorting
+    "ANN401",  # Dynamically-typed annotations in **kwargs
 ]
 
 # Docstring style (choose one: google, numpy, or pep257)
@@ -47,7 +50,7 @@ convention = "numpy"
 
 # Import sorting
 [tool.ruff.lint.isort]
-known-first-party = ["config", "chatbot", "app"]
+known-first-party = ["config", "chatbot", "app", "tests"]
 
 # Formatting (double quotes)
 [tool.ruff.format]

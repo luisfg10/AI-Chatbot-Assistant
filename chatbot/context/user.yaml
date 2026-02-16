@@ -1,0 +1,23 @@
+# User Prompts used for the chatbot
+
+# ------------------------------------------------------------------
+# Chatbot
+
+chatbot:
+  template: |
+    {conversation history}
+    Current user query: {user query}
+
+  memory template: |
+    Here's a recap of your current conversation:
+    {history}
+
+
+# ------------------------------------------------------------------
+# Memory Management
+
+memory manager: |
+  Conversation history:
+  {history}
+
+

@@ -10,8 +10,13 @@
                 "gemini-2.0-flash-lite"
             ],
             "default model": "gemini-2.5-flash"
+        },
+        "openai": {
+            "available models": [
+                "gpt-5-mini",
+                "gpt-5-nano"
+            ],
+            "default model": "gpt-5-mini"
         }
-
     }
-    
 }

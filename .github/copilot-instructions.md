@@ -8,8 +8,6 @@ This project is a Python-based application designed for an AI chatbot assistant 
 
 ### Coding Standards  
 * Follow this philosophy when writing code: "Simplicity is the ultimate sophistication."  
-* Functions/methods: Always include a docstring briefly describing its purpose and parameters, along with type hints for parameters and return values. No need to over-explain obvious functionality.  
-* Naming: `snake_case` (functions/variables), `PascalCase` (classes), `SCREAMING_SNAKE` (constants).  
-* Use the typing library for type hints in both functions and regular objects, with imports such as `List`, `Dict`, `Optional`, `Union`, etc.  
+* Functions/methods: Always include a numpy-style docstring briefly describing its purpose and parameters, along with type hints for parameters and return values. No need to over-explain obvious functionality.  
+* Object naming compliant with PEP8 standards.
 * Always use **logger** from `loguru` for logging instead of generic `print` statements.  
-* Limit line length to 100 characters tops, and respect standard PEP8 linting rules.
