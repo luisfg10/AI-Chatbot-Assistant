@@ -34,6 +34,7 @@ select = [
     "UP",    # pyupgrade (modern Python)
     "B",     # flake8-bugbear (common bugs)
     "E402",  # Module level import not at top of file (allow imports after docstrings and comments)
+    "ARG",   # lint for unused function arguments
 ]
 
 ignore = [

@@ -107,8 +107,8 @@ class ChatbotContextHelper(BaseContextHelper):
         """
         Initialize the ChatbotContextHelper.
 
-        Assumes a two-file distribution of chatbot context: one for system prompts and one for user prompts.
-        If this structure changes, this class will need to be updated accordingly.
+        Assumes a two-file distribution of chatbot context: one for system prompts and one for
+        user prompts. If this structure changes, this class will need to be updated accordingly.
 
         Parameters
         ----------
@@ -182,7 +182,6 @@ class ChatbotContextHelper(BaseContextHelper):
             "conversation history": conversation_prompt
         })
 
-
     def get_memory_manager_system_prompt(
             self,
             personality: str
@@ -204,3 +203,57 @@ class ChatbotContextHelper(BaseContextHelper):
         return system_prompt_template.format(**{
             "chatbot personality prompt": personality_prompt
         })
+
+    def get_memory_manager_user_prompt(
+            self,
+            recent_conversation: list[dict],
+            long_term_memory: str | None = None,
+            user_input_key: str = "user",
+            chatbot_response_key: str = "chatbot"
+    ) -> str:
+        """
+        Get the user prompt for the memory manager, optionally including long-term memory.
+
+        Parameters
+        ----------
+            recent_conversation: list[dict]
+                A list of recent conversation turns, where each turn is represented as a dictionary.
+                e.g.,
+                    [{
+                        "user": "What is the capital of France?",
+                        "chatbot": "The capital of France is Paris."
+                    }, ...
+                    ]
+            long_term_memory: str | None
+                Optional long-term memory to include in the user prompt, which may contain key facts about the
+                user and the conversation that should be retained.
+                e.g., "The user's name is John and they seem to be interested in geography."
+            user_input_key: str
+                The key in the conversation turn dictionaries that corresponds to the user's input.
+                Defaults to "user".
+            chatbot_response_key: str
+                The key in the conversation turn dictionaries that corresponds to the chatbot's response.
+                Defaults to "chatbot".
+
+        Returns
+        -------
+            str
+                The formatted user prompt for the memory manager.
+        """
+        # TODO: Complete method
+        outer_key = self.load_and_format_context(
+            file_path=self.context_dir + self.user_prompts_file,
+            key_name="memory manager"
+        )
+        # Format recent conversation into string representation
+        short_term_memory = ""
+
+        # Return results
+        return self.load_and_format_context(
+            file_path=self.context_dir + self.user_prompts_file,
+            key_name="memory manager",
+            **{
+                "long term memory": long_term_memory or "Not available.",
+                "short term memory": short_term_memory
+            }
+        )

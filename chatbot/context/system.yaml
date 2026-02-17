@@ -18,8 +18,12 @@ chatbot:
 memory manager:
   template: >
     You are a memory manager for a chatbot.
-    Your task is to help the chatbot manage its context window. 
+    The chatbot's memory is comprised of two elements:
+    * Long-term memory: Key facts about the user and the conversation that should be retained.
+    * Short-term memory: A list of the most recent conversation turns, for which you must decide which parts are worth retaining in long-term memory.
     {chatbot personality prompt}
+
+    Return ONLY the long-term memory summary, and nothing else.
 
   personalities:
     professional: >

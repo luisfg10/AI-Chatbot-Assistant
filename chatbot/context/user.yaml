@@ -16,8 +16,11 @@ chatbot:
 # ------------------------------------------------------------------
 # Memory Management
 
-memory manager: |
-  Conversation history:
-  {history}
-
-
+memory manager:
+  template: |
+    Long-term memory: {long term memory}
+    Recent interactions: {short term memory}
+  short term template: |
+    * Turn #{turn number}:
+      User: {user input}
+      Chatbot: {chatbot response}

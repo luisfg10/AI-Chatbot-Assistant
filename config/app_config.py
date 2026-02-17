@@ -32,6 +32,7 @@ class AppConfig:
             "Application cannot start: "
             f"LLM config file not found at '{LLM_CONFIG_PATH}'"
         )
+    default_config: dict = LLM_CONFIG.get("defaults", {})
 
     # ------------------------------------------------------------------
     # Environment Variables
@@ -45,7 +46,7 @@ class AppConfig:
     # Set LLM provider
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER")
     if not LLM_PROVIDER:
-        LLM_PROVIDER = LLM_CONFIG.get("default provider")
+        LLM_PROVIDER = default_config.get("provider")
         if not LLM_PROVIDER:
             raise ValueError(
                 "LLM_PROVIDER not set in environment variables and no default "
@@ -80,9 +81,12 @@ class AppConfig:
 
     # Set Temperature
     LLM_TEMPERATURE: float = float(
-        os.getenv("LLM_TEMPERATURE"),
-        LLM_CONFIG.get("default temperature", 0.7)
+        os.getenv("LLM_TEMPERATURE"), default_config.get("temperature", 0)
     )
 
     # Set API Key, if required by provider
     LLM_API_KEY: str = os.getenv("LLM_API_KEY")
+
+    # Set completion tokens
+    LLM_MAX_COMPLETION_TOKENS: int = default_config.get("max completion tokens", 5000)
+    LLM_TURNS_BEFORE_CONTEXT_CLEANUP: int = default_config.get("turns before context cleanup", 5)

@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 from config import AppConfig
-from chatbot.utils.context import ChatbotContextHelper
+from chatbot.core.context import ChatbotContextHelper
 
 
 class ChatbotAgent(ChatbotContextHelper):
@@ -27,6 +27,9 @@ class ChatbotAgent(ChatbotContextHelper):
             llm_provider: str = AppConfig.LLM_PROVIDER,
             llm_code: str = AppConfig.LLM_CODE,
             llm_api_key: str | None = AppConfig.LLM_API_KEY,
+            max_completion_tokens: int | None = AppConfig.LLM_MAX_COMPLETION_TOKENS,
+            supported_llm_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
+            turns_for_context_cleanup: int = AppConfig.LLM_TURNS_BEFORE_CONTEXT_CLEANUP,
             create_client: bool = True
     ) -> None:
         """
@@ -42,8 +45,26 @@ class ChatbotAgent(ChatbotContextHelper):
                 If not provided, it will be read from environment variables or defaulted.
             llm_api_key: Optional[str]
                 The API key for the LLM provider. If not provided, it will be read from environment variables.
+            max_completion_tokens: int | None = AppConfig.LLM_MAX_COMPLETION_TOKENS,
+                The maximum number of tokens for LLM completions.
+                Defaults to the value from AppConfig.
+            supported_llm_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
+                The list of supported LLM personalities.
+                Defaults to the value from AppConfig.
+            turns_for_context_cleanup: int = AppConfig.LLM_TURNS_BEFORE_CONTEXT_CLEANUP,
+                The number of conversation turns after which to trigger context cleanup.
+                Defaults to the value from AppConfig.
             create_client: bool
                 Whether to create the OpenAI client during initialization. Defaults to True.
+
+        Attributes
+        ----------
+            ...
+            memory: dict
+                A dictionary to store the chatbot's memory, including long-term and short-term memory.
+                * Long-term memory: Key facts about the user and and the conversation that should be retained.
+                * Short-term memory: A list of the most recent conversation turns, which are eventually either saved
+                to long-term memory or discarded during context cleanup.
         """
         if not all(
             isinstance(param, str) and len(param) > 0
@@ -58,6 +79,18 @@ class ChatbotAgent(ChatbotContextHelper):
                 f"Available providers: {list(self.__class__.LLM_PROVIDER_URL_MAPPINGS.keys())}"
             )
         self.llm_code = llm_code
+        self.supported_llm_personalities = (
+            supported_llm_personalities
+            if isinstance(supported_llm_personalities, (list, tuple))
+            and len(supported_llm_personalities) > 0
+            else None
+        )
+        self.max_completion_tokens = (
+            max_completion_tokens
+            if isinstance(max_completion_tokens, int) and max_completion_tokens > 0
+            else None
+        )
+        self.turns_for_context_cleanup = turns_for_context_cleanup
 
         # Create Client if requested, otherwise save parameters for later creation
         if create_client:
@@ -69,6 +102,12 @@ class ChatbotAgent(ChatbotContextHelper):
         else:
             self.llm_provider = llm_provider
             self.llm_api_key = llm_api_key
+
+        # Init empty memory
+        self.memory = {
+            "long term": None,
+            "short term": []
+        }
 
         # Initialize context helper
         super().__init__()
@@ -97,11 +136,29 @@ class ChatbotAgent(ChatbotContextHelper):
             api_key=api_key
         )
 
-    def call_llm(
+    def set_prompt_templates(self, personality: str) -> None:
+        """
+        Set the chatbot's system prompts in the self, which are determined by its specified personality.
+
+        This method may be called during initialization or at any other time to update
+        the chatbot's prompts based on a new input.
+        """
+        if hasattr(self, "supported_llm_personalities") and self.supported_llm_personalities:
+            if personality not in self.supported_llm_personalities:
+                raise ValueError(
+                    f"Personality '{personality}' is not in the list of supported "
+                    f"personalities: {self.supported_llm_personalities}"
+                )
+
+        self.prompts = {
+            "chatbot system": self.get_chatbot_system_prompt(personality),
+            "memory manager system": self.get_memory_manager_system_prompt(personality),
+        }
+
+    def llm_api_call(
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        max_tokens: int | None = None,
         tools: list[dict] | None = None
     ) -> str | None:
         """
@@ -111,12 +168,8 @@ class ChatbotAgent(ChatbotContextHelper):
         ----------
             user_prompt: str
                 The user's input prompt to the chatbot.
-            model: str
-                The specific LLM model code to use for generating the response.
             system_prompt: Optional[str]
                 An optional system prompt to provide additional context or instructions to the LLM.
-            max_tokens: Optional[int]
-                The maximum number of tokens to generate in the response.
             tools: Optional[list[dict]]
                 An optional list of tools to provide to the LLM for enhanced capabilities.
 
@@ -137,11 +190,21 @@ class ChatbotAgent(ChatbotContextHelper):
             "model": self.llm_code,
             "messages": messages
         }
-        if isinstance(max_tokens, int) and max_tokens > 0:
-            params["max_completion_tokens"] = max_tokens
+        if hasattr(self, "max_completion_tokens") and self.max_completion_tokens:
+            params["max_tokens"] = self.max_completion_tokens
         if isinstance(tools, list) and len(tools) > 0:
             params["tools"] = tools
 
         # Return API response
         response = self.client.chat.completions.create(**params)
         return response.choices[0].message.content if response.choices else None
+
+    def _cleanup_context(self) -> None:
+        """
+        Perform context cleanup based on the number of conversation turns.
+
+        Does not validate the appropriate number of turns for cleanup, this should be done before
+        calling this method.
+        """
+        # TODO: Complete after implementing memory manager prompts and functionality
+

@@ -1,6 +1,10 @@
 {
-    "default provider": "gemini",
-    "default temperature": 0,
+    "defaults": {
+        "provider": "gemini",
+        "temperature": 0,
+        "max completion tokens": 5000,
+        "turns before context cleanup": 5
+    },
     "available providers": {
         "gemini": {
             "available models": [
