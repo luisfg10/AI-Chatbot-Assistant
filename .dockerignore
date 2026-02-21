@@ -1,0 +1,13 @@
+# directories
+.venv/*
+.github/*
+.vscode/
+__pycache__/
+
+# files
+LICENSE
+.gitignore
+.DS_Store
+README.md
+CHANGELOG.md
+.python-version

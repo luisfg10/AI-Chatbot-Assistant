@@ -1,0 +1,29 @@
+# User Prompts used for the chatbot
+
+short term memory template: |
+  * Turn #{turn number}:
+    User: {user input}
+    Chatbot: {chatbot response}
+
+# ------------------------------------------------------------------
+# Chatbot
+
+chatbot:
+  template: |
+    {memory}
+    Current user query: {user query}
+
+  memory template: |
+    This is your long-term memory:
+    {long term memory}
+    This is your short-term memory:
+    {short term memory}
+
+# ------------------------------------------------------------------
+# Memory Manager
+
+memory manager:
+  template: |
+    Long-term memory: {long term memory}
+    Recent interactions:
+    {short term memory}

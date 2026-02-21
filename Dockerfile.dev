@@ -1,0 +1,22 @@
+FROM python:3.13.0-slim
+
+# Install uv as dep manager
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files first (for layer caching)
+COPY pyproject.toml uv.lock ./
+
+# Install production dependencies only
+RUN uv sync
+
+# Copy application code
+COPY . .
+
+# Expose Streamlit default port
+EXPOSE 8501
+
+# For development: start with bash shell
+CMD ["/bin/bash"]

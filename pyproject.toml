@@ -1,0 +1,64 @@
+[project]
+name = "ai-chatbot-assistant"
+version = "0.0.1"
+description = "Project based on building a framework-less agentic AI chatbot assistant to solve common questions and tasks."
+readme = "README.md"
+requires-python = ">=3.13.0"
+dependencies = [
+    "loguru>=0.7.3",
+    "openai>=2.21.0",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "streamlit>=1.54.0",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.0",
+]
+
+# Linting configuration with Ruff
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes  
+    "I",     # isort (import sorting)
+    "N",     # pep8-naming conventions
+    "W",     # pycodestyle warnings
+    "ANN",   # flake8-annotations (type hints)
+    "D",     # pydocstyle (docstrings)
+    "UP",    # pyupgrade (modern Python)
+    "B",     # flake8-bugbear (common bugs)
+    "E402",  # Module level import not at top of file (allow imports after docstrings and comments)
+    "ARG",   # lint for unused function arguments
+]
+
+ignore = [
+    "E501",    # Line too long (formatter handles this)
+    "D203",    # One blank line before class (conflicts with D211)
+    "D213",    # Multi-line docstring summary second line (conflicts with D212)
+    "I001",    # isort: too strict on import sorting
+    "ANN401",  # Dynamically-typed annotations in **kwargs
+]
+
+# Docstring style (choose one: google, numpy, or pep257)
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# Import sorting
+[tool.ruff.lint.isort]
+known-first-party = ["config", "chatbot", "app", "tests"]
+
+# Formatting (double quotes)
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.per-file-ignores]
+# Allow missing module docstrings everywhere except __init__.py
+"!__init__.py" = ["D100"]

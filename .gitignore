@@ -1,0 +1,12 @@
+# specific directories
+__pycache__/
+.vscode/
+.venv/
+.ruff_cache/
+temp/
+
+# specific files
+.env
+
+# specific file types
+.DS_Store
