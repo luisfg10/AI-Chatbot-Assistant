@@ -39,6 +39,19 @@ uv sync
 uv add pandas
 ```
 
+## Run the Project
+To start the Streamlit chatbot application locally:
+
+```bash
+# Make sure you're in the project directory with your virtual environment activated
+uv run streamlit run main.py
+```
+
+The application will start and automatically open in your default web browser. If it doesn't open automatically, navigate to the URL shown in the terminal output (typically `http://localhost:8501`).
+
+To stop the server, press `Ctrl+C` in the terminal.
+
+
 ## Linting and Formatting
 This project uses `ruff` for linting (and formatting if you wish), and it is included as a dev dependency in the `pyproject.toml` file. You can run it with the following command:
 ```bash

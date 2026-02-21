@@ -80,9 +80,14 @@ class AppConfig:
         )
 
     # Set Temperature
-    LLM_TEMPERATURE: float = float(
-        os.getenv("LLM_TEMPERATURE"), default_config.get("temperature", 0)
-    )
+    try:
+        LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE"))
+    except (TypeError, ValueError):
+        LLM_TEMPERATURE = default_config.get("temperature", 0.7)
+        logger.debug(
+            "LLM_TEMPERATURE not set or invalid in environment variables. "
+            f"Defaulting to {LLM_TEMPERATURE}"
+        )
 
     # Set API Key, if required by provider
     LLM_API_KEY: str = os.getenv("LLM_API_KEY")

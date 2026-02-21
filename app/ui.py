@@ -81,14 +81,10 @@ def render_chat() -> None:
         )
 
 
-def main() -> None:
+def build_chatbot_ui() -> None:
     """Entry point for the Streamlit chatbot application."""
     st.set_page_config(page_title="AI Chatbot Assistant", page_icon="💬")
 
     init_session_state()
     render_sidebar()
     render_chat()
-
-
-if __name__ == "__main__":
-    main()
