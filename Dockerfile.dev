@@ -10,10 +10,13 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install production dependencies only
-RUN uv sync --frozen --no-dev
+RUN uv sync
 
 # Copy application code
 COPY . .
 
-# Run the application using uv
-CMD ["uv", "run", "streamlit", "run", "main.py"]
+# Expose Streamlit default port
+EXPOSE 8501
+
+# For development: start with bash shell
+CMD ["/bin/bash"]
