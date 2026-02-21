@@ -142,25 +142,6 @@ class ChatbotAgent(ChatbotContextHelper):
             api_key=api_key
         )
 
-    def set_prompt_templates(self, personality: str) -> None:
-        """
-        Set the chatbot's system prompts in the self, which are determined by its specified personality.
-
-        This method may be called during initialization or at any other time to update
-        the chatbot's prompts based on a new input.
-        """
-        if hasattr(self, "supported_llm_personalities") and self.supported_llm_personalities:
-            if personality not in self.supported_llm_personalities:
-                raise ValueError(
-                    f"Personality '{personality}' is not in the list of supported "
-                    f"personalities: {self.supported_llm_personalities}"
-                )
-
-        self.prompts = {
-            "chatbot system": self.get_chatbot_system_prompt(personality),
-            "memory manager system": self.get_memory_manager_system_prompt(personality),
-        }
-
     def llm_api_call(
         self,
         user_prompt: str,
@@ -248,13 +229,32 @@ class ChatbotAgent(ChatbotContextHelper):
         self.memory["long term"] = new_long_term_memory
         self.memory["short term"] = []
 
+    def set_prompt_templates(self, personality: str) -> None:
+        """
+        Set the chatbot's system prompts in the self, which are determined by its specified personality.
+
+        This method may be called during initialization or at any other time to update
+        the chatbot's prompts based on a new input.
+        """
+        if hasattr(self, "supported_llm_personalities") and self.supported_llm_personalities:
+            if personality not in self.supported_llm_personalities:
+                raise ValueError(
+                    f"Personality '{personality}' is not in the list of supported "
+                    f"personalities: {self.supported_llm_personalities}"
+                )
+
+        self.prompts = {
+            "chatbot system": self.get_chatbot_system_prompt(personality),
+            "memory manager system": self.get_memory_manager_system_prompt(personality),
+        }
+
     def chatbot_call(
             self,
             user_query: str,
             debug: bool = True
     ) -> str | None:
         """
-        Make a chatbot API call with included memory and context management.
+        Make a chatbot API call with included context management.
 
         Parameters
         ----------
@@ -268,4 +268,43 @@ class ChatbotAgent(ChatbotContextHelper):
             str | None
                 The generated response from the chatbot as a string, or None if the API call fails.
         """
-        # TODO: Complete
+        # Memory management
+        self._update_memory(debug=debug)
+
+        # Chatbot API call
+        system_prompt = self.prompts.get("chatbot system")
+        user_prompt = self.get_chatbot_user_prompt(
+            user_query=user_query,
+            long_term_memory=self.memory["long term"],
+            short_term_memory=self.memory["short term"]
+        )
+        llm_response = self.llm_api_call(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+            debug=debug
+        )
+
+        # Update memory and turns
+        self.memory["short term"].append({
+            "user": user_query,
+            "chatbot": llm_response
+        })
+        self.turns["total"] += 1
+
+        return llm_response
+
+    def reset_memory(self) -> None:
+        """
+        Reset the chatbot's memory, clearing both long-term and short-term memory.
+
+        This can be useful for starting a new conversation or clearing any accumulated context.
+
+        Returns
+        -------
+            None
+                Resets the chatbot's memory to an empty state.
+        """
+        self.memory = {
+            "long term": None,
+            "short term": []
+        }

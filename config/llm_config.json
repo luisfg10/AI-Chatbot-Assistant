@@ -3,7 +3,7 @@
         "provider": "gemini",
         "temperature": 0,
         "max completion tokens": 5000,
-        "turns before context cleanup": 5
+        "turns before context cleanup": 10
     },
     "available providers": {
         "gemini": {

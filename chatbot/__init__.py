@@ -12,3 +12,6 @@ Notes
     what API endpoint to call, similar to GitHub Copilot's model selection list.
 
 """
+from .core.agent import ChatbotAgent
+
+__all__ = ["ChatbotAgent"]

@@ -148,7 +148,10 @@ class ChatbotContextHelper(BaseContextHelper):
     def get_chatbot_user_prompt(
             self,
             user_query: str,
-            conversation_history: str | None = None
+            long_term_memory: str | None = None,
+            short_term_memory: list[dict] | None = None,
+            user_input_key: str = "user",
+            chatbot_response_key: str = "chatbot"
     ) -> str:
         """
         Get the user prompt for the chatbot, optionally including conversation history.
@@ -158,8 +161,18 @@ class ChatbotContextHelper(BaseContextHelper):
             user_query: str
                 The current user's query to include in the prompt.
                 e.g., "What is the capital of France?"
-            conversation_history: str | None
-                Optional conversation history to include in the user prompt.
+            long_term_memory: str | None
+                Optional long-term memory to include in the prompt, which may contain key facts about the
+                user and the conversation that should be retained.
+                e.g., "The user's name is John and they seem to be interested in geography."
+            short_term_memory: list[dict] | None
+                Optional short-term memory to include in the prompt.
+            user_input_key: str
+                The key in the conversation turn dictionaries that corresponds to the user's input.
+                Defaults to "user".
+            chatbot_response_key: str
+                The key in the conversation turn dictionaries that corresponds to the chatbot's response.
+                Defaults to "chatbot".
 
         Returns
         -------
@@ -170,16 +183,29 @@ class ChatbotContextHelper(BaseContextHelper):
             file_path=self.context_dir + self.user_prompts_file,
             key_name="chatbot"
         )
-        user_prompt_template = outer_key.get("template")
+        user_prompt_template = outer_key["template"]
 
-        conversation_prompt = ""
-        if conversation_history:
-            memory_template = outer_key.get("memory template")
-            conversation_prompt = memory_template.format(history=conversation_history)
-
+        memory_prompt = ""
+        if long_term_memory or short_term_memory:
+            memory_template = outer_key["memory template"]
+            short_term_memory_template = self.load_and_format_context(
+                file_path=self.context_dir + self.user_prompts_file,
+                key_name="short term memory template"
+            )
+            short_term_memory_prompt = "\n".join([
+                short_term_memory_template.format(**{
+                    "turn number": position + 1,
+                    "user input": contents.get(user_input_key),
+                    "chatbot response": contents.get(chatbot_response_key)
+                }) for position, contents in enumerate(short_term_memory)
+            ]) if short_term_memory else "Not available."
+            memory_prompt = memory_template.format(**{
+                "long term memory": long_term_memory or "Not available.",
+                "short term memory": short_term_memory_prompt
+            })
         return user_prompt_template.format(**{
-            "user query": user_query,
-            "memory": conversation_prompt
+            "memory": memory_prompt,
+            "user query": user_query
         })
 
     def get_memory_manager_system_prompt(
@@ -197,8 +223,8 @@ class ChatbotContextHelper(BaseContextHelper):
             file_path=self.context_dir + self.system_prompts_file,
             key_name="memory manager"
         )
-        system_prompt_template = outer_key.get("template")
-        personality_prompt = outer_key.get("personalities", {}).get(personality, "")
+        system_prompt_template = outer_key["template"]
+        personality_prompt = outer_key["personalities"][personality]
 
         return system_prompt_template.format(**{
             "chatbot personality prompt": personality_prompt
@@ -240,12 +266,16 @@ class ChatbotContextHelper(BaseContextHelper):
             str
                 The formatted user prompt for the memory manager.
         """
+        # TODO: Update to reflect new yaml structure
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.user_prompts_file,
             key_name="memory manager"
         )
         # Format recent conversation into string representation
-        short_term_template = outer_key.get("short term template")
+        short_term_template = self.load_and_format_context(
+            file_path=self.context_dir + self.user_prompts_file,
+            key_name="short term memory template"
+        )
         short_term_memory = "\n".join([
             short_term_template.format(**{
                 "turn number": position + 1,
@@ -255,7 +285,7 @@ class ChatbotContextHelper(BaseContextHelper):
         ])
 
         # Format template
-        memory_template = outer_key.get("template")
+        memory_template = outer_key["template"]
         return memory_template.format(**{
             "short term memory": short_term_memory,
             "long term memory": long_term_memory or "Not available."
