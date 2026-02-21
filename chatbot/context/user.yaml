@@ -5,7 +5,7 @@
 
 chatbot:
   template: |
-    {conversation history}
+    {memory}
     Current user query: {user query}
 
   memory template: |
@@ -19,7 +19,8 @@ chatbot:
 memory manager:
   template: |
     Long-term memory: {long term memory}
-    Recent interactions: {short term memory}
+    Recent interactions:
+    {short term memory}
   short term template: |
     * Turn #{turn number}:
       User: {user input}

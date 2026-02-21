@@ -1,3 +1,4 @@
+from loguru import logger
 from openai import OpenAI
 
 from config import AppConfig
@@ -90,7 +91,6 @@ class ChatbotAgent(ChatbotContextHelper):
             if isinstance(max_completion_tokens, int) and max_completion_tokens > 0
             else None
         )
-        self.turns_for_context_cleanup = turns_for_context_cleanup
 
         # Create Client if requested, otherwise save parameters for later creation
         if create_client:
@@ -107,6 +107,12 @@ class ChatbotAgent(ChatbotContextHelper):
         self.memory = {
             "long term": None,
             "short term": []
+        }
+
+        # Object for tracking conversation turns
+        self.turns = {
+            "context cleanup limit": turns_for_context_cleanup,
+            "total": 0
         }
 
         # Initialize context helper
@@ -159,7 +165,8 @@ class ChatbotAgent(ChatbotContextHelper):
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        tools: list[dict] | None = None
+        tools: list[dict] | None = None,
+        debug: bool = True
     ) -> str | None:
         """
         Call the LLM API and return the generated response.
@@ -172,6 +179,8 @@ class ChatbotAgent(ChatbotContextHelper):
                 An optional system prompt to provide additional context or instructions to the LLM.
             tools: Optional[list[dict]]
                 An optional list of tools to provide to the LLM for enhanced capabilities.
+            debug: bool
+                Whether to print debug information about the API call. Defaults to True.
 
         Returns
         -------
@@ -197,14 +206,66 @@ class ChatbotAgent(ChatbotContextHelper):
 
         # Return API response
         response = self.client.chat.completions.create(**params)
-        return response.choices[0].message.content if response.choices else None
+        response_content = response.choices[0].message.content if response.choices else None
+        if debug:
+            logger.debug(f"LLM API Call - Params: {params}")
+            logger.debug(f"LLM API Call - Response: {response_content}")
 
-    def _cleanup_context(self) -> None:
+        return response_content
+
+    def _update_memory(self, debug: bool = True) -> None:
         """
-        Perform context cleanup based on the number of conversation turns.
+        Update the chatbot's memory based on recent conversation history and long-term memory.
 
-        Does not validate the appropriate number of turns for cleanup, this should be done before
-        calling this method.
+        Cleanup is performed by making an API call which looks to summarize the recent conversation
+        and extract any key details to be saved to long-term memory, while discarding the rest.
+
+        Parameters
+        ----------
+            debug: bool
+                Whether to print debug information about the memory update process. Defaults to True.
+
+        Returns
+        -------
+            None
+                Updates the chatbot's memory to the self.memory attribute.
         """
-        # TODO: Complete after implementing memory manager prompts and functionality
+        # skip if memory update is not needed
+        if self.turns["total"] % self.turns["context cleanup limit"] != 0:
+            return
 
+        # recalculate long-term memory
+        new_long_term_memory = self.llm_api_call(
+            user_prompt=self.get_memory_manager_user_prompt(
+                recent_conversation=self.memory["short term"],
+                long_term_memory=self.memory["long term"]
+            ),
+            system_prompt=self.prompts.get("memory manager system"),
+            debug=debug
+        )
+
+        # update memory to self
+        self.memory["long term"] = new_long_term_memory
+        self.memory["short term"] = []
+
+    def chatbot_call(
+            self,
+            user_query: str,
+            debug: bool = True
+    ) -> str | None:
+        """
+        Make a chatbot API call with included memory and context management.
+
+        Parameters
+        ----------
+            user_query: str
+                The user's input query to the chatbot.
+            debug: bool
+                Whether to print debug information about the chatbot call process. Defaults to True.
+
+        Returns
+        -------
+            str | None
+                The generated response from the chatbot as a string, or None if the API call fails.
+        """
+        # TODO: Complete

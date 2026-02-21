@@ -179,7 +179,7 @@ class ChatbotContextHelper(BaseContextHelper):
 
         return user_prompt_template.format(**{
             "user query": user_query,
-            "conversation history": conversation_prompt
+            "memory": conversation_prompt
         })
 
     def get_memory_manager_system_prompt(
@@ -240,20 +240,23 @@ class ChatbotContextHelper(BaseContextHelper):
             str
                 The formatted user prompt for the memory manager.
         """
-        # TODO: Complete method
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.user_prompts_file,
             key_name="memory manager"
         )
         # Format recent conversation into string representation
-        short_term_memory = ""
+        short_term_template = outer_key.get("short term template")
+        short_term_memory = "\n".join([
+            short_term_template.format(**{
+                "turn number": position + 1,
+                "user input": contents.get(user_input_key),
+                "chatbot response": contents.get(chatbot_response_key)
+            }) for position, contents in enumerate(recent_conversation)
+        ])
 
-        # Return results
-        return self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_file,
-            key_name="memory manager",
-            **{
-                "long term memory": long_term_memory or "Not available.",
-                "short term memory": short_term_memory
-            }
-        )
+        # Format template
+        memory_template = outer_key.get("template")
+        return memory_template.format(**{
+            "short term memory": short_term_memory,
+            "long term memory": long_term_memory or "Not available."
+        })
