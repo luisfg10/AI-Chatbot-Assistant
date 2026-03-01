@@ -1,11 +1,25 @@
 {
-    "defaults": {
-        "provider": "gemini",
-        "temperature": 0,
-        "max completion tokens": 5000,
+    "default config": {
+        "model": "gemini-2.5-flash",
+        "personality": "friendly",
+        "max completion tokens": 2000,
         "turns before context cleanup": 10
     },
-    "available providers": {
+    "supported chatbot personalities": [
+        "friendly",
+        "professional"
+    ],
+    "available models": {
+        "anthropic": {
+            "available models": [
+                "claude-sonnet-4",
+                "claude-sonnet-4.5",
+                "claude-sonnet-4.6",
+                "claude-haiku-4.5",
+                "claude-haiku-3.5"
+            ],
+            "base url": "https://api.anthropic.com/v1/"
+        },
         "gemini": {
             "available models": [
                 "gemini-2.5-flash",
@@ -13,14 +27,28 @@
                 "gemini-2.0-flash",
                 "gemini-2.0-flash-lite"
             ],
-            "default model": "gemini-2.5-flash"
+            "base url": "https://generativelanguage.googleapis.com/v1beta/openai/"
+        },
+        "grok": {
+            "available models": [
+                "grok-4-1-fast-reasoning",
+                "grok-4-1-fast-non-reasoning",
+                "grok-code-fast-1",
+                "grok-4-fast-reasoning",
+                "grok-4-fast-non-reasoning"
+            ],
+            "base url": "https://api.x.ai/v1/responses"
         },
         "openai": {
             "available models": [
                 "gpt-5-mini",
-                "gpt-5-nano"
+                "gpt-5-nano",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano",
+                "o4-mini",
+                "gpt-5.1-codex-mini"
             ],
-            "default model": "gpt-5-mini"
+            "base url": "https://api.openai.com/v1"
         }
     }
 }

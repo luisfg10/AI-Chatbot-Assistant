@@ -4,13 +4,14 @@ The main challenge here is to build a fully-functional chatbot with memory, tool
 
 
 ## Table of Contents
-- [1. Project Structure](#1-project-structure)
-- [2. Running the Project](#2-running-the-project)
-  - [2.1 Running with Docker for Development](#21-running-with-docker-for-development)
-  - [2.2 Running with Docker for Production](#22-running-with-docker-for-production)
-  - [2.3 Run from a Local Virtual Environment](#23-run-from-a-local-virtual-environment)
-- [3. Coding Standards](#3-coding-standards)
-- [4. Future Versions](#4-future-versions)
+- [1. Project Structure](#1-project-structure)  
+- [2. Running the Project](#2-running-the-project)  
+  - [2.1 Running with Docker for Development](#21-running-with-docker-for-development)  
+  - [2.2 Running with Docker for Production](#22-running-with-docker-for-production)  
+  - [2.3 Run from a Local Virtual Environment](#23-run-from-a-local-virtual-environment)  
+- [3. How to Navigate the User Interface](#3-how-to-navigate-the-user-interface)  
+- [4. Coding Standards](#4-coding-standards)  
+- [5. Future Versions](#5-future-versions)  
 
 ## 1. Project Structure
 The project was structured in a modular way and each core functionality of the chatbot and webpage were written to be as customizable and extensible as possible, particularly the chatbot's prompt logic.
@@ -124,8 +125,11 @@ The application will start and automatically open in your default web browser. I
 
 To stop the server, press `Ctrl+C` in the terminal.
 
+## 3. How to Navigate the User Interface  
+**Note**: This project is currently in early stages and this section will be expanded once a stable version of the UI is implemented. For now, the advice is to run this project by yourself and explore the different features available in the UI, as it's also designed to be intuitive and user-friendly.
 
-## 3. Coding Standards  
+
+## 4. Coding Standards  
 This project uses `ruff` for linting (and formatting if you wish), and it is included as a dev dependency in the `pyproject.toml` file. You can run it with the following command:
 ```bash
 # Linting
@@ -135,7 +139,7 @@ uv run ruff check .
 uv run ruff format .
 ```
 
-## 4. Future Versions  
+## 5. Future Versions  
 Here are some ideas to further improve this project:
 * Add a web search tool to the chatbot so it can improve and ground its responses upon the user's request from the UI.  
 * Add support for more LLM providers and models, including open-source and self-hosted ones. Make model selection available from the UI.  

@@ -1,7 +1,6 @@
 import streamlit as st
 from loguru import logger
 
-from config import AppConfig
 from chatbot import ChatbotAgent
 
 
@@ -10,39 +9,58 @@ def init_session_state() -> None:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    if "personality" not in st.session_state:
-        st.session_state.personality = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES[0]
-
     if "agent" not in st.session_state:
         agent = ChatbotAgent()
-        agent.set_prompt_templates(st.session_state.personality)
+        agent.set_client(agent.default_model)
+        agent.set_personality(agent.default_personality)
         st.session_state.agent = agent
+
+    if "model" not in st.session_state:
+        st.session_state.model = st.session_state.agent.default_model
+
+    if "personality" not in st.session_state:
+        st.session_state.personality = st.session_state.agent.default_personality
 
 
 def render_sidebar() -> None:
-    """Render the sidebar with personality selector and clear chat button."""
+    """Render the sidebar with model selector, personality selector, and clear chat button."""
     with st.sidebar:
         st.header("Settings")
 
+        agent = st.session_state.agent
+        available_models = list(agent.models.keys())
+        supported_personalities = list(agent.supported_chatbot_personalities)
+
+        new_model = st.selectbox(
+            "Model",
+            options=available_models,
+            index=available_models.index(st.session_state.model),
+        )
+
+        if new_model != st.session_state.model:
+            st.session_state.model = new_model
+            agent.set_client(new_model)
+            logger.debug(f"Model changed to '{new_model}'")
+
         new_personality = st.selectbox(
             "Chatbot Personality",
-            options=AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
-            index=AppConfig.SUPPORTED_CHATBOT_PERSONALITIES.index(
+            options=supported_personalities,
+            index=supported_personalities.index(
                 st.session_state.personality
             ),
         )
 
         if new_personality != st.session_state.personality:
             st.session_state.personality = new_personality
-            st.session_state.agent.set_prompt_templates(new_personality)
-            logger.info(f"Personality changed to '{new_personality}'")
+            agent.set_personality(new_personality)
+            logger.debug(f"Personality changed to '{new_personality}'")
 
         st.markdown("---")
 
         if st.button("Clear Chat", type="primary", use_container_width=True):
             st.session_state.agent.reset_memory()
             st.session_state.messages = []
-            logger.info("Chat cleared and agent memory reset.")
+            logger.debug("Chat cleared and agent memory reset.")
             st.rerun()
 
 
