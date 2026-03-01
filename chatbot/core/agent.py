@@ -10,98 +10,112 @@ class ChatbotAgent(ChatbotContextHelper):
     Class for chatbot agent that can be used to generate responses based on user input and context.
 
     Inherits from ChatbotContextHelper for managing the chatbot's context.
-
-    For simplicity, even though this class can be used to connect to multiple providers, only those
-    who provide compatible endpoints to OpenAI's wrapper library are supported.
     """
-
-    # ------------------------------------------------------------------
-    # Class Attributes
-
-    LLM_PROVIDER_URL_MAPPINGS: dict[str, str | None] = {
-        "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "openai": None  # defaults to OpenAI's default base URL
-    }
 
     def __init__(
             self,
-            llm_provider: str = AppConfig.LLM_PROVIDER,
-            llm_code: str = AppConfig.LLM_CODE,
-            llm_api_key: str | None = AppConfig.LLM_API_KEY,
-            max_completion_tokens: int | None = AppConfig.LLM_MAX_COMPLETION_TOKENS,
-            supported_llm_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
-            turns_for_context_cleanup: int = AppConfig.LLM_TURNS_BEFORE_CONTEXT_CLEANUP,
-            create_client: bool = True
+            available_models: dict = AppConfig.AVAILABLE_MODELS,
+            models_api_keys: dict = AppConfig.MODELS_API_KEYS,
+            default_chatbot_config: dict = AppConfig.DEFAULT_CONFIG,
+            supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
+            fallback_turns_for_context_cleanup: int = 10
     ) -> None:
         """
         Initialize the ChatbotAgent.
 
         Parameters
         ----------
-            llm_provider: Optional[str]
-                The LLM provider to use (e.g., "gemini", "openai").
-                If not provided, it will be read from environment variables or defaulted.
-            llm_code: Optional[str]
-                The specific LLM model code to use (e.g., "gemini-2.0-pro", "gpt-4").
-                If not provided, it will be read from environment variables or defaulted.
-            llm_api_key: Optional[str]
-                The API key for the LLM provider. If not provided, it will be read from environment variables.
-            max_completion_tokens: int | None = AppConfig.LLM_MAX_COMPLETION_TOKENS,
-                The maximum number of tokens for LLM completions.
-                Defaults to the value from AppConfig.
-            supported_llm_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
-                The list of supported LLM personalities.
-                Defaults to the value from AppConfig.
-            turns_for_context_cleanup: int = AppConfig.LLM_TURNS_BEFORE_CONTEXT_CLEANUP,
-                The number of conversation turns after which to trigger context cleanup.
-                Defaults to the value from AppConfig.
-            create_client: bool
-                Whether to create the OpenAI client during initialization. Defaults to True.
+            available_models: dict
+                A dictionary of available LLM providers and their corresponding models,
+                as defined in the app config.
+            models_api_keys: dict
+                A dictionary mapping LLM providers to their corresponding API keys,
+                as defined in the app config.
+            default_chatbot_config: dict
+                A dictionary containing the default configuration for the chatbot, including default
+                LLM provider, model code, and other settings.
+            supported_chatbot_personalities: list
+                A list of supported chatbot personalities.
+                Each personality string should have matching system prompt templates in the directory
+                path AppConfig.CHATBOT_CONTEXT_DIR
+            fallback_turns_for_context_cleanup: int
+                A fallback value for the number of conversation turns before context cleanup is triggered,
+                in case the value provided in the app config is invalid.
 
         Attributes
         ----------
-            ...
+            models: dict
+                A dictionary for conveniently storing connection parameters for the different available
+                LLM providers so different Chatbot clients can be created as needed.
+                e.g.,
+                    {
+                        "gemini-flash-2.5": {
+                            "base url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+                            "api key": {GEMINI_API_KEY from .env file},
+                        }, ...
+                    }
+            supported_chatbot_personalities: list
+                A list of supported chatbot personalities, as defined in the app config.
             memory: dict
                 A dictionary to store the chatbot's memory, including long-term and short-term memory.
                 * Long-term memory: Key facts about the user and and the conversation that should be retained.
-                * Short-term memory: A list of the most recent conversation turns, which are eventually either saved
-                to long-term memory or discarded during context cleanup.
+                * Short-term memory: A list of the most recent conversation turns, which are eventually either
+                saved to long-term memory or discarded during context cleanup.
         """
-        if not all(
-            isinstance(param, str) and len(param) > 0
-            for param in [llm_provider, llm_code]
+        # Raise if no models are available based on the app config
+        if not isinstance(available_models, dict) or len(available_models) == 0:
+            raise ValueError("Didn't receive a valid value for `available_models`.")
+
+        # Create an object for easier lookup of available models
+        self.models = {}
+        for provider, details in available_models.items():
+            base_url = details["base url"]
+            api_key = models_api_keys[provider]
+            self.models.update({
+                model: {
+                    "base url": base_url,
+                    "api key": api_key
+                } for model in details.get("available models", [])
+            })
+
+        # Create an object for storing personality-specific API call parameters
+        self.supported_chatbot_personalities = supported_chatbot_personalities
+        if (
+            not isinstance(self.supported_chatbot_personalities, (list, tuple))
+            or not self.supported_chatbot_personalities
         ):
-            raise ValueError(
-                "'llm_provider' and 'llm_code' both must be non-empty strings."
-            )
-        if llm_provider not in self.__class__.LLM_PROVIDER_URL_MAPPINGS:
-            raise ValueError(
-                f"'llm_provider' not recognized for API URL mappings. "
-                f"Available providers: {list(self.__class__.LLM_PROVIDER_URL_MAPPINGS.keys())}"
-            )
-        self.llm_code = llm_code
-        self.supported_llm_personalities = (
-            supported_llm_personalities
-            if isinstance(supported_llm_personalities, (list, tuple))
-            and len(supported_llm_personalities) > 0
-            else None
-        )
+            raise ValueError("Didn't receive a valid value for `supported_chatbot_personalities`.")
+
+        # Set default model to show on Chatbot startup
+        default_model = default_chatbot_config.get("model")
+        if default_model not in self.models:
+            default_model = list(self.models.keys())[0]
+        self.default_model = default_model
+
+        # Set default personality to show on Chatbot startup
+        default_personality = default_chatbot_config.get("personality")
+        if default_personality not in self.supported_chatbot_personalities:
+            default_personality = self.supported_chatbot_personalities[0]
+        self.default_personality = default_personality
+
+        # Set max completion tokens: if not valid, no limit is set
+        max_completion_tokens = default_chatbot_config.get("max completion tokens")
         self.max_completion_tokens = (
-            max_completion_tokens
-            if isinstance(max_completion_tokens, int) and max_completion_tokens > 0
-            else None
+                max_completion_tokens if isinstance(max_completion_tokens, int)
+                and max_completion_tokens > 0 else None
         )
 
-        # Create Client if requested, otherwise save parameters for later creation
-        if create_client:
-            base_url = self.__class__.LLM_PROVIDER_URL_MAPPINGS.get(llm_provider)
-            self.client = self._create_client(
-                base_url=base_url,
-                api_key=llm_api_key
+        turns_for_context_cleanup = default_chatbot_config.get("turns before context cleanup")
+        if not isinstance(turns_for_context_cleanup, int) or turns_for_context_cleanup <= 0:
+            logger.error(
+                f"Invalid value for 'turns before context cleanup': {turns_for_context_cleanup}. "
+                f"Defaulting to {fallback_turns_for_context_cleanup}."
             )
-        else:
-            self.llm_provider = llm_provider
-            self.llm_api_key = llm_api_key
+            turns_for_context_cleanup = fallback_turns_for_context_cleanup
+        self.turns = {
+            "context cleanup limit": turns_for_context_cleanup,
+            "total": 0
+        }
 
         # Init empty memory
         self.memory = {
@@ -109,38 +123,67 @@ class ChatbotAgent(ChatbotContextHelper):
             "short term": []
         }
 
-        # Object for tracking conversation turns
-        self.turns = {
-            "context cleanup limit": turns_for_context_cleanup,
-            "total": 0
-        }
-
         # Initialize context helper
         super().__init__()
 
-    @staticmethod
-    def _create_client(
-            base_url: str,
-            api_key: str
-    ) -> OpenAI:
+    def set_client(
+            self,
+            model_code: str | None = None,
+    ) -> None:
         """
-        Create and return an OpenAI client based on the specified LLM provider.
+        Set and store an OpenAI client and model code to use.
+
+        This model may be called at any time to update the chatbot's client parameters.
 
         Parameters
         ----------
-            base_url: str
-                The base URL for the LLM API, which may vary based on the LLM provider.
-            api_key: str
-                The API key for authenticating with the base URL.
+            model_code: str | None
+                The code of the LLM model for which to create the client.
+                If not provided, defaults to the default model saved to the self.
 
         Returns
         -------
-            An instance of the OpenAI client configured for the specified provider.
+            None
+                Sets the self.client attribute to an instance of the OpenAI client.
         """
-        return OpenAI(
-            base_url=base_url,
-            api_key=api_key
+        if not model_code:
+            model_code = self.default_model
+        self.model_code = model_code
+        model_data = self.models[model_code]
+        self.client = OpenAI(
+            base_url=model_data["base url"],
+            api_key=model_data["api key"]
         )
+
+    def set_personality(
+            self,
+            personality: str | None = None
+    ) -> None:
+        """
+        Set the chatbot's system prompts to the self, which are determined by its specified personality.
+
+        This method may be called during initialization or at any other time to update
+        the chatbot's prompts based on a new input.
+
+        Parameters
+        ----------
+            personality: str | None
+                The personality for which to set the chatbot's system prompts.
+                If not provided, defaults to the default personality saved to the self.
+
+        Returns
+        -------
+            None
+                Sets the self.prompts attribute to a dictionary containing the system prompts for the chatbot,
+                which are determined by the specified personality.
+        """
+        if personality not in self.supported_chatbot_personalities:
+            personality = self.default_personality
+
+        self.prompts = {
+            "chatbot system": self.get_chatbot_system_prompt(personality),
+            "memory manager system": self.get_memory_manager_system_prompt(personality),
+        }
 
     def llm_api_call(
         self,
@@ -151,6 +194,9 @@ class ChatbotAgent(ChatbotContextHelper):
     ) -> str | None:
         """
         Call the LLM API and return the generated response.
+
+        Includes special considerations for certain OpenAI models for which parameter
+        names have changed.
 
         Parameters
         ----------
@@ -177,11 +223,18 @@ class ChatbotAgent(ChatbotContextHelper):
         messages.append({"role": "user", "content": user_prompt})
 
         params = {
-            "model": self.llm_code,
+            "model": self.model_code,
             "messages": messages
         }
         if hasattr(self, "max_completion_tokens") and self.max_completion_tokens:
-            params["max_tokens"] = self.max_completion_tokens
+            if self.model_code in [
+                "gpt-5-mini",
+                "gpt-5-nano"
+            ]:
+                param_name = "max_completion_tokens"
+            else:
+                param_name = "max_tokens"
+            params[param_name] = self.max_completion_tokens
         if isinstance(tools, list) and len(tools) > 0:
             params["tools"] = tools
 
@@ -228,25 +281,6 @@ class ChatbotAgent(ChatbotContextHelper):
         # update memory to self
         self.memory["long term"] = new_long_term_memory
         self.memory["short term"] = []
-
-    def set_prompt_templates(self, personality: str) -> None:
-        """
-        Set the chatbot's system prompts in the self, which are determined by its specified personality.
-
-        This method may be called during initialization or at any other time to update
-        the chatbot's prompts based on a new input.
-        """
-        if hasattr(self, "supported_llm_personalities") and self.supported_llm_personalities:
-            if personality not in self.supported_llm_personalities:
-                raise ValueError(
-                    f"Personality '{personality}' is not in the list of supported "
-                    f"personalities: {self.supported_llm_personalities}"
-                )
-
-        self.prompts = {
-            "chatbot system": self.get_chatbot_system_prompt(personality),
-            "memory manager system": self.get_memory_manager_system_prompt(personality),
-        }
 
     def chatbot_call(
             self,

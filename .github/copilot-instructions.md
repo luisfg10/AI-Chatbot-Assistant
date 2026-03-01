@@ -2,7 +2,7 @@
 This project is a Python-based application designed for an AI chatbot assistant without relying on external agentic AI frameworks.
 
 ### Golden Rules
-* When unsure about implementation details or requirements, ALWAYS consult the developer rather than making assumptions.
+* When unsure about implementation details or given a long assignment, make sure to first ask any relevant clarifying questions.
 * Always ask for confirmation before implementing a solution that involves creating new files or deleting existing ones.
 * Limit your responses to the specific ask of the developer.
 
