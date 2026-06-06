@@ -33,7 +33,7 @@ The project was structured in a modular way and each core functionality of the c
 |
 ├── config/                # Configuration files
 │   ├── __init__.py
-│   ├── .env.example       # Template for environment variables
+│   ├── .env.template       # Template for environment variables
 │   ├── app_config.py      # Application configuration
 │   └── llm_config.json    # Default LLM model configurations
 |
@@ -110,6 +110,7 @@ uv python pin 3.13.0
 uv venv
 
 # Activate virtual environment (for MacOS/Linux)
+# In Windows PS, run .\.venv\Scripts\Activate.ps1
 source .venv/bin/activate
 
 # Install dependencies
