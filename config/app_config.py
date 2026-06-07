@@ -23,7 +23,7 @@ class AppConfig:
     """
 
     # Default Directories (should end with "/")
-    CHATBOT_CONTEXT_DIR: str = "chatbot/context/"
+    CHATBOT_CONTEXT_DIR: str = "src/chatbot/context/"
     DOTENV_FILE_PATH: str = "config/.env"
     LLM_CONFIG_PATH: str = "config/llm_config.json"
 

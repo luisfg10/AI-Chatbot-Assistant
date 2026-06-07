@@ -2,7 +2,7 @@ from loguru import logger
 from openai import OpenAI
 
 from config import AppConfig
-from chatbot.core.context import ChatbotContextHelper
+from src.chatbot.core.context import ChatbotContextHelper
 
 
 class ChatbotAgent(ChatbotContextHelper):

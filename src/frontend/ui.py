@@ -1,7 +1,7 @@
 import streamlit as st
 from loguru import logger
 
-from chatbot import ChatbotAgent
+from src.chatbot import ChatbotAgent
 
 
 def init_session_state() -> None:
