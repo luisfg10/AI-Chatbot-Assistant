@@ -1,11 +1,10 @@
 """Define default settings for the application."""
 # Built-ins
-import os
 import json
+import os
 
-# Third-party
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 
 # Class for managing environment variables
@@ -51,10 +50,10 @@ class AppConfig:
     # Resolve available models and providers
     AVAILABLE_MODELS: dict = {
         provider: details
-        for provider, details in LLM_CONFIG.get("available models", {}).items()
+        for provider, details in LLM_CONFIG.get("providers", {}).items()
         if str(os.getenv(f"{provider.upper()}_API_KEY")).strip() != ""
     }
-    MODELS_API_KEYS: dict = {
+    PROVIDER_API_KEYS: dict = {
         provider: os.getenv(f"{provider.upper()}_API_KEY")
         for provider in AVAILABLE_MODELS.keys()
     }

@@ -15,7 +15,7 @@ class ChatbotAgent(ChatbotContextHelper):
     def __init__(
             self,
             available_models: dict = AppConfig.AVAILABLE_MODELS,
-            models_api_keys: dict = AppConfig.MODELS_API_KEYS,
+            provider_api_keys: dict = AppConfig.PROVIDER_API_KEYS,
             default_chatbot_config: dict = AppConfig.DEFAULT_CONFIG,
             supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
             fallback_turns_for_context_cleanup: int = 10
@@ -28,7 +28,7 @@ class ChatbotAgent(ChatbotContextHelper):
             available_models: dict
                 A dictionary of available LLM providers and their corresponding models,
                 as defined in the app config.
-            models_api_keys: dict
+            provider_api_keys: dict
                 A dictionary mapping LLM providers to their corresponding API keys,
                 as defined in the app config.
             default_chatbot_config: dict
@@ -70,7 +70,7 @@ class ChatbotAgent(ChatbotContextHelper):
         self.models = {}
         for provider, details in available_models.items():
             base_url = details["base url"]
-            api_key = models_api_keys[provider]
+            api_key = provider_api_keys[provider]
             self.models.update({
                 model: {
                     "base url": base_url,

@@ -9,7 +9,7 @@
         "friendly",
         "professional"
     ],
-    "available models": {
+    "providers": {
         "anthropic": {
             "available models": [
                 "claude-sonnet-4",
