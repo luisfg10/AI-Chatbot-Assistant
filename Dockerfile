@@ -16,4 +16,4 @@ RUN uv sync --frozen --no-dev
 COPY . .
 
 # Run the application using uv
-CMD ["uv", "run", "streamlit", "run", "main.py"]
+CMD ["uv", "run", "main.py"]

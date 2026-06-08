@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <!-- brain/chip icon -->
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/>
+                    </svg>
+                </div>
+                <div class="header-text">
+                    <h1 class="app-title">AI Chatbot Assistant</h1>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <div class="chat-panel" id="chatPanel">
+                <!-- Messages will be appended here -->
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea
+                        id="messageInput"
+                        class="message-input"
+                        placeholder="Type a message… (Shift+Enter for newline)"
+                        rows="1"
+                    ></textarea>
+                    <button id="sendButton" class="send-button" aria-label="Send message">
+                        <!-- arrow-up icon -->
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Controls Bar -->
+        <footer class="controls-bar">
+            <div class="controls-container">
+                <div class="controls-group">
+                    <label for="modelSelect" class="control-label">Model</label>
+                    <select id="modelSelect" class="control-select">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+
+                <div class="controls-divider"></div>
+
+                <div class="controls-group">
+                    <label for="personalitySelect" class="control-label">Personality</label>
+                    <select id="personalitySelect" class="control-select">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+
+                <div class="controls-divider"></div>
+
+                <button id="clearMemoryButton" class="clear-memory-button" aria-label="Clear conversation memory">
+                    <!-- trash icon inline -->
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                    Clear memory
+                </button>
+            </div>
+        </footer>
+
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

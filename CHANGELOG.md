@@ -1,5 +1,10 @@
 # Changelog
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file.  
+
+## [v0.0.3]  
+* Replaced the Streamlit UI with a Single-Page-Application (SPA) using HTML, JavaScript and CSS connected to a `FastAPI` backend which handles interactions to the chatbot agent class. This change provides greater flexibility and scalability as the app grows in capabilities going forward. Streamlit is still included in the project but will be deprecated in a future version.   
+* Updated AI coding assistant material on `.github/`: Updated `copilot-instructions.md`, and added a new `skills/` directory with two skills: [feature-dev](https://github.com/notedit/happy-skills/blob/main/skills/dev/feature-dev/SKILL.md) and [frontend-design](https://github.com/anthropics/skills/blob/main/skills/frontend-design/SKILL.md), with some minor tweaks for this project's specific implementation.    
+* Minor changes to ruff linting rules and code ordering.    
 
 ## [v0.0.2]  
 * Added the capability for the user to select the LLM directly from the UI, allowing for more flexibility and ease of use without needing to modify environment variables. The list of available LLMs is automatically resolved from a combination of `config/llm_config.json` and the API keys provided from environment variables. Models set in the congiguration for which no API key is provided will be hidden from the dropdown list in the UI.  

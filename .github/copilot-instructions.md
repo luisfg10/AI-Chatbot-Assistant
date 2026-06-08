@@ -1,13 +1,16 @@
 ## Project Overview
-This project is a Python-based application designed for an AI chatbot assistant without relying on external agentic AI frameworks.
+This project is a Python-based application for deploying an AI chatbot with useful capabilities like web search and memory retention inside a user-friendly UI.  
 
-### Golden Rules
-* When unsure about implementation details or given a long assignment, make sure to first ask any relevant clarifying questions.
-* Always ask for confirmation before implementing a solution that involves creating new files or deleting existing ones.
-* Limit your responses to the specific ask of the developer.
+### Golden Rules  
+* Keep it simple.   
+* When running code, always use `uv` as launcher and not `python` or `python3`.  e.g., `uv run main.py`.  
+* Only use try-except blocks when necessary and to catch specific exceptions.  
+* Always se the `feature-dev` skill when developing new features.  
+* When debugging follow these steps: Reproduce the bug -> Find the root cause -> Apply possible fix -> Validate the error is fixed  
 
-### Coding Standards  
-* Follow this philosophy when writing code: "Simplicity is the ultimate sophistication."  
+### Coding Style Standards  
+* Never, under any circumstance, use emojis.    
 * Functions/methods: Always include a numpy-style docstring briefly describing its purpose and parameters, along with type hints for parameters and return values. No need to over-explain obvious functionality.  
-* Object naming compliant with PEP8 standards.
-* Always use **logger** from `loguru` for logging instead of generic `print` statements.  
+* Use `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants and `snake_case` for constants.  
+* Always use **logger** from `loguru` for logging with its appropriate level of urgency instead of generic `print` statements.  
+* Keep imports at the file's top level and sort the following way from top to bottom with one line in between: standard libraries, third-party, local imports.  

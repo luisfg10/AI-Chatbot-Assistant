@@ -1,5 +1,5 @@
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -100,7 +100,7 @@ class ChatbotContextHelper(BaseContextHelper):
 
     def __init__(
             self,
-            context_dir: str  = AppConfig.CHATBOT_CONTEXT_DIR,
+            context_dir: str = AppConfig.CHATBOT_CONTEXT_DIR,
             system_prompts_file: str = "system.yaml",
             user_prompts_file: str = "user.yaml"
     ) -> None:

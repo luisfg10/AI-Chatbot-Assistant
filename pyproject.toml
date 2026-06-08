@@ -5,6 +5,7 @@ description = "Project based on building a framework-less agentic AI chatbot ass
 readme = "README.md"
 requires-python = ">=3.13.0"
 dependencies = [
+    "fastapi>=0.136.3",
     "loguru>=0.7.3",
     "openai>=2.21.0",
     "python-dotenv>=1.2.1",
@@ -23,6 +24,7 @@ dev = [
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+preview = true
 
 [tool.ruff.lint]
 select = [
@@ -35,15 +37,14 @@ select = [
     "D",     # pydocstyle (docstrings)
     "UP",    # pyupgrade (modern Python)
     "B",     # flake8-bugbear (common bugs)
-    "E402",  # Module level import not at top of file (allow imports after docstrings and comments)
-    "ARG",   # lint for unused function arguments
+    "ARG",   # Unused function arguments
 ]
 
 ignore = [
     "E501",    # Line too long (formatter handles this)
     "D203",    # One blank line before class (conflicts with D211)
+    "D204",    # 1 blank line required after class docstring
     "D213",    # Multi-line docstring summary second line (conflicts with D212)
-    "I001",    # isort: too strict on import sorting
     "ANN401",  # Dynamically-typed annotations in **kwargs
 ]
 
@@ -53,7 +54,7 @@ convention = "numpy"
 
 # Import sorting
 [tool.ruff.lint.isort]
-known-first-party = ["config", "chatbot", "app", "tests"]
+known-first-party = ["src"]
 
 # Formatting (double quotes)
 [tool.ruff.format]
@@ -62,3 +63,5 @@ quote-style = "double"
 [tool.ruff.lint.per-file-ignores]
 # Allow missing module docstrings everywhere except __init__.py
 "!__init__.py" = ["D100"]
+# Don't lint function calls as function default arguments for FastAPI app
+"src/backend/main.py" = ["B008"]
