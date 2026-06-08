@@ -9,6 +9,7 @@ from fastapi import (
     HTTPException,
 )
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.backend.schemas import (
     AvailableModelsResponse,
@@ -24,15 +25,19 @@ agent_store: dict[str, ChatbotAgent] = {}
 # ------------------------------------------------------------------
 # Homepage
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
+
 
 @app.get("/")
 async def homepage(session_id: str = Cookie(default=None)) -> FileResponse:
     """Serve the static SPA frontend and create/save unique session IDs using cookies."""
-    # If session doesn't exist, create new and assign chatbot instance to it
     response = FileResponse("src/frontend/static/index.html")
     if not session_id:
         session_id = str(uuid4())
-        response.set_cookie(key="session_id", value=session_id)
+        response.set_cookie(key="session_id", value=session_id, path="/", httponly=True)
+        agent_store[session_id] = ChatbotAgent()
+    elif session_id not in agent_store:
         agent_store[session_id] = ChatbotAgent()
     return response
 
@@ -115,6 +120,27 @@ async def get_personalities(
         personalities=list(agent.supported_chatbot_personalities),
         default_personality=agent.default_personality
     )
+
+
+@router.post("/reset")
+async def reset_memory(
+    agent: ChatbotAgent = Depends(get_agent)
+) -> dict:
+    """
+    Reset the chatbot agent's memory.
+
+    Parameters
+    ----------
+        agent : ChatbotAgent
+            The chatbot agent instance for the current session.
+
+    Returns
+    -------
+        dict
+            A simple response indicating success.
+    """
+    agent.reset_memory()
+    return {"ok": True}
 
 
 @router.post("/chat")

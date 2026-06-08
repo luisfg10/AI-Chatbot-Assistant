@@ -126,6 +126,10 @@ class ChatbotAgent(ChatbotContextHelper):
         # Initialize context helper
         super().__init__()
 
+        # Initialize the client and personality
+        self.set_client()
+        self.set_personality()
+
     def set_client(
             self,
             model_code: str | None = None,

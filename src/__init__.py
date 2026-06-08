@@ -1,4 +1,4 @@
-"""Module for displaying the chatbot within an interactive Streamlit UI."""
-from .frontend import build_chatbot_ui
+"""Module for the AI Chatbot Assistant application."""
+from src.backend import app
 
-__all__ = ["build_chatbot_ui"]
+__all__ = ["app"]

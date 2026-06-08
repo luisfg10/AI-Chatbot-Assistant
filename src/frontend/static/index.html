@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="app-title">Chatbot Assistant</h1>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <div class="chat-panel" id="chatPanel">
+                <!-- Messages will be appended here -->
+            </div>
+            
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Type your message... (Shift+Enter for newline)"
+                        rows="1"
+                    ></textarea>
+                    <button id="sendButton" class="send-button" aria-label="Send message">
+                        <span class="send-button-text">Send</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Controls Bar -->
+        <footer class="controls-bar">
+            <div class="controls-container">
+                <div class="controls-group">
+                    <label for="modelSelect" class="control-label">Model</label>
+                    <select id="modelSelect" class="control-select">
+                        <option value="">Loading models...</option>
+                    </select>
+                </div>
+
+                <div class="controls-group">
+                    <label for="personalitySelect" class="control-label">Personality</label>
+                    <select id="personalitySelect" class="control-select">
+                        <option value="">Loading personalities...</option>
+                    </select>
+                </div>
+
+                <button id="clearMemoryButton" class="clear-memory-button" aria-label="Clear conversation memory">
+                    Clear Memory
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

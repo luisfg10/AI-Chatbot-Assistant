@@ -1,3 +1,15 @@
+"""
+Module for displaying the chatbot within an interactive Streamlit UI.
+
+This module defines the layout and behavior of the chatbot interface,
+including the sidebar for settings and the main chat area.
+
+Notes
+-----
+    * This UI is deprecated in favor of a full-code interface, and will be removed in
+    a future version.
+"""
+
 import streamlit as st
 from loguru import logger
 
@@ -99,7 +111,7 @@ def render_chat() -> None:
         )
 
 
-def build_chatbot_ui() -> None:
+def build_streamlit_ui() -> None:
     """Entry point for the Streamlit chatbot application."""
     st.set_page_config(page_title="AI Chatbot Assistant", page_icon="💬")
 
