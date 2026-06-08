@@ -18,35 +18,41 @@ The project was structured in a modular way and each core functionality of the c
 
 ```
 .
-├── app/                    # Streamlit UI components
-│   ├── __init__.py
-│   └── ui.py              # Main UI rendering logic
-|
-├── chatbot/               # Core chatbot functionality
-│   ├── context/           # Prompt templates
-│   │   ├── system.yaml    # System prompt configurations
-│   │   └── user.yaml      # User prompt templates
-│   ├── core/              # Core chatbot logic
-│   │   ├── agent.py       # ChatbotAgent implementation
-│   │   └── context.py     # Context management utilities
-│   └── __init__.py
-|
 ├── config/                # Configuration files
 │   ├── __init__.py
-│   ├── .env.template       # Template for environment variables
 │   ├── app_config.py      # Application configuration
 │   └── llm_config.json    # Default LLM model configurations
-|
-├── tests/                 # Test files (pending implementation)
-│   └── __init__.py
-|
-├── CHANGELOG.md           # Project changelog
-├── Dockerfile             # Docker configuration
-├── LICENSE                # License information
-├── README.md              # This file
 ├── main.py                # Application entry point
 ├── pyproject.toml         # Project dependencies and metadata
-└── uv.lock                # Dependency lock file
+├── README.md              # This file
+├── Dockerfile             # Docker configuration
+├── Dockerfile.dev         # Development Docker configuration
+├── LICENSE                # License information
+├── CHANGELOG.md           # Project changelog
+├── tests/                 # Test files (pending implementation)
+│   └── __init__.py
+├── uv.lock                # Dependency lock file
+└── src/                   # Application source code
+    ├── __init__.py
+    ├── backend/           # Backend app entry points and API logic
+    │   ├── __init__.py
+    │   ├── main.py
+    │   └── schemas.py
+    ├── chatbot/           # Core chatbot code
+    │   ├── __init__.py
+    │   ├── context/       # Prompt templates
+    │   │   ├── system.yaml
+    │   │   └── user.yaml
+    │   └── core/          # Core chatbot logic
+    │       ├── agent.py
+    │       └── context.py
+    └── frontend/         # UI components
+        ├── __init__.py
+        ├── streamlit_ui.py
+        └── static/
+            ├── app.js
+            ├── index.html
+            └── style.css
 ```
 
 ### 1.1 Application Configuration  
@@ -63,19 +69,19 @@ This alternative builds a Docker image including the project's `dev` dependencie
 docker build -f Dockerfile.dev -t ai-chatbot-assistant:dev .
 
 # Run the container with volume mounting and port mapping
-docker run --rm -v "${PWD}":/app -p 8501:8501 -it ai-chatbot-assistant:dev
+docker run --rm -v "${PWD}":/app -p 8000:8000 -it ai-chatbot-assistant:dev
 
-# Inside the container, run the Streamlit app
-uv run streamlit run main.py
+# Inside the container, run the app
+uv run main.py
 
 # Exit container
 exit
 ```
 
-The `--rm` flag removes the container after exit, `-v "${PWD}":/app` mounts your current directory for live code updates, and `-p 8501:8501` maps the Streamlit port. Access the app at `http://localhost:8501`.
+The `--rm` flag removes the container after exit, `-v "${PWD}":/app` mounts your current directory for live code updates, and `-p 8000:8000` maps the port. Access the app at `http://localhost:8000`.
 
 ## 2.2 Running with Docker for Production  
-This alternative builds a Docker image with only the production dependencies and runs the Streamlit app directly.
+This alternative builds a Docker image with only the production dependencies and runs the app directly.
 
 ```bash
 # Build the Docker image
@@ -120,9 +126,9 @@ uv sync
 uv add pandas
 
 # Run the project
-uv run streamlit run main.py
+uv run main.py
 ```
-The application will start and automatically open in your default web browser. If it doesn't open automatically, navigate to the URL shown in the terminal output (typically `http://localhost:8501`).
+The application will start and run on `http://localhost:8000`.
 
 To stop the server, press `Ctrl+C` in the terminal.
 
