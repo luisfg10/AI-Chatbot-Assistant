@@ -34,7 +34,7 @@
     --base-font-size: 15px;
     --line-height: 1.65;
     --header-height: 58px;
-    --controls-height: 88px;
+    --controls-height: 52px;
     --transition: all 0.18s ease;
 }
 
@@ -152,7 +152,7 @@ body { overflow: hidden; }
     display: flex;
     flex-direction: column;
     margin-top: var(--header-height);
-    margin-bottom: calc(var(--controls-height) + 68px);
+    margin-bottom: calc(var(--controls-height) + 62px);
     min-height: 0;
 }
 
@@ -448,7 +448,7 @@ body { overflow: hidden; }
     color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    padding: 6px 10px;
+    padding: 4px 10px;
     cursor: pointer;
     transition: var(--transition);
     outline: none;
@@ -480,7 +480,7 @@ body { overflow: hidden; }
     color: var(--text-muted);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 6px 12px;
+    padding: 4px 10px;
     font-family: var(--font-mono);
     font-weight: 500;
     font-size: 0.75rem;
