@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
+## [v0.0.5] (pending)  
+* Deprecated Streamlit UI and removed as dependency for the project.  
+
 ## [v0.0.3]  
 * Replaced the Streamlit UI with a Single-Page-Application (SPA) using HTML, JavaScript and CSS connected to a `FastAPI` backend which handles interactions to the chatbot agent class. This change provides greater flexibility and scalability as the app grows in capabilities going forward. Streamlit is still included in the project but will be deprecated in a future version.   
 * Updated AI coding assistant material on `.github/`: Updated `copilot-instructions.md`, and added a new `skills/` directory with two skills: [feature-dev](https://github.com/notedit/happy-skills/blob/main/skills/dev/feature-dev/SKILL.md) and [frontend-design](https://github.com/anthropics/skills/blob/main/skills/frontend-design/SKILL.md), with some minor tweaks for this project's specific implementation.    

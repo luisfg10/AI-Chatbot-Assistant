@@ -48,7 +48,6 @@ The project was structured in a modular way and each core functionality of the c
     │       └── context.py
     └── frontend/         # UI components
         ├── __init__.py
-        ├── streamlit_ui.py
         └── static/
             ├── app.js
             ├── index.html
