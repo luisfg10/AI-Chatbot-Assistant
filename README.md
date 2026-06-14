@@ -46,8 +46,7 @@ The project was structured in a modular way and each core functionality of the c
     │   └── core/          # Core chatbot logic
     │       ├── agent.py
     │       └── context.py
-    └── frontend/         # UI components
-        ├── __init__.py
+    └── frontend/         # UI components (static files)
         └── static/
             ├── app.js
             ├── index.html
@@ -144,11 +143,3 @@ uv run ruff check .
 # Formatting
 uv run ruff format .
 ```
-
-## 5. Future Versions  
-Here are some ideas to further improve this project:
-* Add a web search tool to the chatbot so it can improve and ground its responses upon the user's request from the UI.  
-* Add support for more LLM providers and models, including open-source and self-hosted ones. Make model selection available from the UI.  
-* Add a test suite for the project using `pytest` and include in a CI pipeline alongside `ruff` checks to ensure code quality on pull requests to the main branch.  
-* Add additional chatbot features, like extended thinking (simulate using a ReACT architecture) and deep research tasks.  
-* Improve memory management by implementing more advanced information storage and retrieval techniques, such as vector databases or knowledge graphs.  

@@ -6,8 +6,8 @@ Notes
     * The application uses sessions to maintain state across different user interactions,
     but these are lost on restart.
 
-    TODO: Implement persistent session management to allow users to save and load their
-    chat history and agent state across sessions, even after restarting the application.
+    TODO: Reduce the verbosity of the application logs to essential information, or at
+    least control behavior from an environment variable.
 
 """
 from src.backend.main import app
