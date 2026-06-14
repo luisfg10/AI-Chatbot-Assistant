@@ -67,8 +67,8 @@ This alternative builds a Docker image including the project's `dev` dependencie
 # Build the Docker image
 docker build -f Dockerfile.dev -t ai-chatbot-assistant:dev .
 
-# Run the container with volume mounting and port mapping
-docker run --rm -v "${PWD}":/app -p 8000:8000 -it ai-chatbot-assistant:dev
+# Run the container with volume mounting and port mapping (MacOS / Linux / Windows PS)
+docker run --rm -v "${PWD}:/app:ro" -v /app/.venv -p 8000:8000 -it ai-chatbot-assistant:dev
 
 # Inside the container, run the app
 uv run main.py
@@ -77,7 +77,7 @@ uv run main.py
 exit
 ```
 
-The `--rm` flag removes the container after exit, `-v "${PWD}":/app` mounts your current directory for live code updates, and `-p 8000:8000` maps the port. Access the app at `http://localhost:8000`.
+The `--rm` flag removes the container after exit, `-v "${PWD}":/app:ro` mounts your current directory for live code updates in read-only mode (ro), `-v / app/.venv` creates an anonymous volume that shadows the virtual environment inside the container, so `uv` writes there, and `-p 8000:8000` maps the port. Access the app at `http://localhost:8000`.
 
 ## 2.2 Running with Docker for Production  
 This alternative builds a Docker image with only the production dependencies and runs the app directly.
@@ -87,7 +87,7 @@ This alternative builds a Docker image with only the production dependencies and
 docker build -t ai-chatbot-assistant:latest .
 
 # Run the container
-docker run --rm -p 8501:8501 ai-chatbot-assistant:latest
+docker run --rm -p 8000:8000 ai-chatbot-assistant:latest
 ```
 
 ## 2.3 Run from a Local Virtual Environment  
@@ -121,7 +121,7 @@ source .venv/bin/activate
 # Install dependencies
 uv sync
 
-# Add an additional dependency (e.g., pandas)
+# Optional: add an additional dependency (e.g., pandas)
 uv add pandas
 
 # Run the project
