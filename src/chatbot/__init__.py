@@ -7,10 +7,15 @@ Notes
     then retrieving and formatting the relevant sections as needed, as opposed
     to loading them each time a prompt is needed.
 
-    TODO: Support dynamic model selection for each API call. The user should see a dropdown
-    list of available models for certain providers, and that model should be used to determine
-    what API endpoint to call, similar to GitHub Copilot's model selection list.
+    TODO: Change AI endpoint from OpenAI chat completions to responses
 
+    TODO: Add web search tool and connect to frontend, possibly using an external
+    API like SerpAPI or Tavily.
+
+    TODO: Add support for a wider range of personalities, and allow users to define
+    their custom personalities, which should also be persisted across sessions.
+
+    TODO: Switch to more advanced agent memory and compacting techniques.
 """
 from .core.agent import ChatbotAgent
 

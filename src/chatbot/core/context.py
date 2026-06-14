@@ -266,7 +266,6 @@ class ChatbotContextHelper(BaseContextHelper):
             str
                 The formatted user prompt for the memory manager.
         """
-        # TODO: Update to reflect new yaml structure
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.user_prompts_file,
             key_name="memory manager"
