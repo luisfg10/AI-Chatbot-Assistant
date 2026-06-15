@@ -1,8 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
-## [v0.0.5] (pending)  
-* Updated instructions in `README.md` when running `Dockerfile.dev`: the container can now only read the project's directory without being able to write to it. Previously, this caused issues when running from a Windows machine due to symlink conflicts between the container (Linux subsystem) and Windows that prevented `uv` from running correctly.    
+## [v0.0.5] (WIP)  
+* Added context file caching in `src/chatbot/core/context.py` to avoid loading and parsing the YAML files from scratch on every context fetch.  
+* Updated instructions in `README.md` when running `Dockerfile.dev`: the container can now only read the project's directory without being able to write to it. Previously, this caused issues when running from a Windows machine due to symlink conflicts between the container (Linux subsystem) and Windows that prevented `uv` from running correctly.  
 * Deprecated Streamlit UI and removed as dependency for the project.  
 
 ## [v0.0.3]  
