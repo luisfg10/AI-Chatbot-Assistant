@@ -3,10 +3,6 @@ Module for defining the chatbot's context and logic.
 
 Notes
 -----
-    TODO: Optimize prompt management by loading the templates into memory once and
-    then retrieving and formatting the relevant sections as needed, as opposed
-    to loading them each time a prompt is needed.
-
     TODO: Change AI endpoint from OpenAI chat completions to responses
 
     TODO: Add web search tool and connect to frontend, possibly using an external

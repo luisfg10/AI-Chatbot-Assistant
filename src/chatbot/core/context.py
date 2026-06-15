@@ -10,31 +10,64 @@ from config import AppConfig
 class BaseContextHelper:
     """General utility class for managing text from .yaml files."""
 
-    def __init__(self) -> None:
-        pass
-
-    @staticmethod
-    def load_yaml_file(file_path: str) -> dict | list:
+    def __init__(
+            self,
+            file_caching: bool = True
+    ) -> None:
         """
-        Load a YAML file and return its contents as a JSON-type object.
+        Initialize the BaseContextHelper class instance.
 
         Parameters
         ----------
-        file_path : str
-            The path to the YAML file to load.
+            file_caching: bool = True
+                Whether to save to memory already-loaded files to avoid
+                having to load them again on new calls.
+                This is useful in projects with few files that need to be
+                accessed many times, but might consume greater memory when
+                several files (100+) need to be accessed in a single run.
+                Defaults to True.
 
         Returns
         -------
-        dict | list
-            The contents of the YAML file as a dictionary or list.
+            None
+        """
+        self.file_caching = file_caching
+        if self.file_caching:
+            self.file_store = {}
+
+    def load_yaml_file(
+            self,
+            file_path: str
+    ) -> dict | list:
+        """
+        Load a YAML file and return its contents as a JSON-type object.
+
+        If self.file_caching is set to True, it will first check to see if
+        the file is loaded to the file store and loaded from there. If it is
+        not already load it, it will do so and avoid doing that next time around.
+
+        Parameters
+        ----------
+            file_path : str
+                The path to the YAML file to load.
+
+        Returns
+        -------
+            dict | list
+                The contents of the YAML file as a dictionary or list.
 
         Raises
         ------
-        FileNotFoundError
-            If the specified file does not exist.
-        yaml.YAMLError
-            If the file contains invalid YAML syntax.
+            FileNotFoundError
+                If the specified file does not exist.
+            yaml.YAMLError
+                If the file contains invalid YAML syntax.
         """
+        # Optional: load from cache
+        if self.file_caching and file_path in self.file_store:
+            return self.file_store[file_path]
+
+        # Check filepath exists
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
             raise FileNotFoundError(f"YAML file not found: {file_path}")
@@ -45,14 +78,23 @@ class BaseContextHelper:
                 content = yaml.safe_load(file)
 
             if content is None:
-                logger.warning(f"YAML file is empty or contains only null values: {file_path}")
+                logger.warning(
+                    f"YAML file is empty or contains only null values: {file_path}"
+                )
+
+            if self.file_caching:
+                self.file_store[file_path] = content
 
             return content or {}
 
         except yaml.YAMLError as e:
-            raise yaml.YAMLError(f"Invalid YAML syntax in file {file_path}: {e}") from None
+            raise yaml.YAMLError(
+                f"Invalid YAML syntax in file {file_path}: {e}"
+            ) from None
         except Exception as e:
-            raise ValueError(f"Unexpected error loading YAML file {file_path}: {e}") from e
+            raise ValueError(
+                f"Unexpected error loading YAML file {file_path}: {e}"
+            ) from e
 
     def load_and_format_context(
             self,
@@ -68,15 +110,18 @@ class BaseContextHelper:
             file_path: str
                 The path to the YAML file to load.
             key_name: str
-                The key in the YAML file whose value should be retrieved and formatted.
+                The key in the YAML file whose value should be
+                retrieved and formatted.
             **kwargs:
-                Additional keyword arguments to use for formatting, in case the retrieved
-                value corresponds to a string with placeholders.
+                Additional keyword arguments to use for formatting,
+                in case the retrieved value corresponds to a string
+                with placeholders.
 
         Returns
         -------
             dict | list | str
-                The retrieved value from the YAML file, formatted if applicable.
+                The retrieved value from the YAML file, formatted if
+                applicable.
         """
         file = self.load_yaml_file(file_path)
         if not isinstance(file, dict):
@@ -96,43 +141,50 @@ class BaseContextHelper:
 
 
 class ChatbotContextHelper(BaseContextHelper):
-    """Helper class specialized for managing chatbot context."""
+    """Helper class specialized in managing chatbot context."""
 
     def __init__(
             self,
             context_dir: str = AppConfig.CHATBOT_CONTEXT_DIR,
-            system_prompts_file: str = "system.yaml",
-            user_prompts_file: str = "user.yaml"
+            system_prompts_filename: str = "system.yaml",
+            user_prompts_filename: str = "user.yaml",
+            file_caching: bool = True
     ) -> None:
         """
         Initialize the ChatbotContextHelper.
 
-        Assumes a two-file distribution of chatbot context: one for system prompts and one for
-        user prompts. If this structure changes, this class will need to be updated accordingly.
+        Assumes a two-file distribution of chatbot context: one for system
+        prompts and one for user prompts.
+        If this structure changes, this class will need to be updated accordingly.
 
         Parameters
         ----------
             context_dir: str
-                The directory where the chatbot context YAML files are located.
-            system_prompts_file: str
+                The directory where the context YAML files are located.
+            system_prompts_filename: str
                 The filename for the system prompts YAML file.
-            user_prompts_file: str
+            user_prompts_filename: str
                 The filename for the user prompts YAML file.
+            file_caching: bool = True
+                Whether to save to memory already-loaded files to avoid
+                having to load them again on new calls.
         """
         if not isinstance(context_dir, str):
             raise ValueError("'context_dir' must be a string.")
+
         if not context_dir.endswith("/"):
             context_dir += "/"
-        if not system_prompts_file.endswith(".yaml"):
-            system_prompts_file += ".yaml"
-        if not user_prompts_file.endswith(".yaml"):
-            user_prompts_file += ".yaml"
-
         self.context_dir = context_dir
-        self.system_prompts_file = system_prompts_file
-        self.user_prompts_file = user_prompts_file
 
-        super().__init__()
+        if not system_prompts_filename.endswith(".yaml"):
+            system_prompts_filename += ".yaml"
+        self.system_prompts_filename = system_prompts_filename
+
+        if not user_prompts_filename.endswith(".yaml"):
+            user_prompts_filename += ".yaml"
+        self.user_prompts_filename = user_prompts_filename
+
+        super().__init__(file_caching=file_caching)
 
     def get_chatbot_system_prompt(
             self,
@@ -140,7 +192,7 @@ class ChatbotContextHelper(BaseContextHelper):
     ) -> str:
         """Get the system prompt for the chatbot based on the specified personality."""
         outer_key = self.load_and_format_context(
-                file_path=self.context_dir + self.system_prompts_file,
+                file_path=self.context_dir + self.system_prompts_filename,
                 key_name="chatbot"
             )
         return outer_key[personality]
@@ -162,17 +214,17 @@ class ChatbotContextHelper(BaseContextHelper):
                 The current user's query to include in the prompt.
                 e.g., "What is the capital of France?"
             long_term_memory: str | None
-                Optional long-term memory to include in the prompt, which may contain key facts about the
-                user and the conversation that should be retained.
+                Optional long-term memory to include in the prompt, which may contain
+                key facts about the user and the conversation that should be retained.
                 e.g., "The user's name is John and they seem to be interested in geography."
             short_term_memory: list[dict] | None
                 Optional short-term memory to include in the prompt.
             user_input_key: str
-                The key in the conversation turn dictionaries that corresponds to the user's input.
-                Defaults to "user".
+                The key in the conversation turn dictionaries that corresponds to the
+                user's input. Defaults to "user".
             chatbot_response_key: str
-                The key in the conversation turn dictionaries that corresponds to the chatbot's response.
-                Defaults to "chatbot".
+                The key in the conversation turn dictionaries that corresponds to the
+                chatbot's response. Defaults to "chatbot".
 
         Returns
         -------
@@ -180,7 +232,7 @@ class ChatbotContextHelper(BaseContextHelper):
                 The formatted user prompt.
         """
         outer_key = self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_file,
+            file_path=self.context_dir + self.user_prompts_filename,
             key_name="chatbot"
         )
         user_prompt_template = outer_key["template"]
@@ -189,7 +241,7 @@ class ChatbotContextHelper(BaseContextHelper):
         if long_term_memory or short_term_memory:
             memory_template = outer_key["memory template"]
             short_term_memory_template = self.load_and_format_context(
-                file_path=self.context_dir + self.user_prompts_file,
+                file_path=self.context_dir + self.user_prompts_filename,
                 key_name="short term memory template"
             )
             short_term_memory_prompt = "\n".join([
@@ -213,14 +265,14 @@ class ChatbotContextHelper(BaseContextHelper):
             personality: str
     ) -> str:
         """
-        Get the system prompt for the memory manager based on the specified personality.
+        Get the system prompt for the memory manager based on personality.
 
-        Note the personality is used to refine which details of the conversation are important
-        for the memory manager to retain.
+        Note the personality is used to refine which details of the conversation
+        are important for the memory manager to retain.
         """
         # Fetch base key
         outer_key = self.load_and_format_context(
-            file_path=self.context_dir + self.system_prompts_file,
+            file_path=self.context_dir + self.system_prompts_filename,
             key_name="memory manager"
         )
         system_prompt_template = outer_key["template"]
@@ -238,12 +290,13 @@ class ChatbotContextHelper(BaseContextHelper):
             chatbot_response_key: str = "chatbot"
     ) -> str:
         """
-        Get the user prompt for the memory manager, optionally including long-term memory.
+        Get the user prompt for the memory manager.
 
         Parameters
         ----------
             recent_conversation: list[dict]
-                A list of recent conversation turns, where each turn is represented as a dictionary.
+                A list of recent conversation turns, where each turn is
+                represented as a dictionary.
                 e.g.,
                     [{
                         "user": "What is the capital of France?",
@@ -251,15 +304,16 @@ class ChatbotContextHelper(BaseContextHelper):
                     }, ...
                     ]
             long_term_memory: str | None
-                Optional long-term memory to include in the user prompt, which may contain key facts about the
-                user and the conversation that should be retained.
+                Optional long-term memory to include in the user prompt,
+                which may contain key facts about the user and the conversation
+                that should be retained.
                 e.g., "The user's name is John and they seem to be interested in geography."
             user_input_key: str
-                The key in the conversation turn dictionaries that corresponds to the user's input.
-                Defaults to "user".
+                The key in the conversation turn dictionaries that corresponds to the
+                user's input. Defaults to "user".
             chatbot_response_key: str
-                The key in the conversation turn dictionaries that corresponds to the chatbot's response.
-                Defaults to "chatbot".
+                The key in the conversation turn dictionaries that corresponds to the
+                chatbot's response. Defaults to "chatbot".
 
         Returns
         -------
@@ -267,12 +321,12 @@ class ChatbotContextHelper(BaseContextHelper):
                 The formatted user prompt for the memory manager.
         """
         outer_key = self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_file,
+            file_path=self.context_dir + self.user_prompts_filename,
             key_name="memory manager"
         )
         # Format recent conversation into string representation
         short_term_template = self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_file,
+            file_path=self.context_dir + self.user_prompts_filename,
             key_name="short term memory template"
         )
         short_term_memory = "\n".join([
