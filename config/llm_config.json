@@ -12,43 +12,65 @@
     "providers": {
         "anthropic": {
             "available models": [
-                "claude-sonnet-4",
-                "claude-sonnet-4.5",
-                "claude-sonnet-4.6",
-                "claude-haiku-4.5",
-                "claude-haiku-3.5"
+                "claude-sonnet-4-5",
+                "claude-sonnet-4-6",
+                "claude-haiku-4-5",
+                "claude-opus-4-5"
             ],
-            "base url": "https://api.anthropic.com/v1/"
+            "urls": {
+                "api": "https://api.anthropic.com/v1/",
+                "models": "https://platform.claude.com/docs/en/about-claude/models/overview",
+                "pricing": "https://platform.claude.com/docs/en/about-claude/pricing"
+            }
         },
         "gemini": {
             "available models": [
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-pro-preview",
+                "gemini-3-flash-preview",
+                "gemini-2.5-pro",
                 "gemini-2.5-flash",
-                "gemini-2.5-flash-lite",
-                "gemini-2.0-flash",
-                "gemini-2.0-flash-lite"
+                "gemini-2.5-flash-lite"
             ],
-            "base url": "https://generativelanguage.googleapis.com/v1beta/openai/"
+            "urls": {
+                "api": "https://generativelanguage.googleapis.com/v1beta/openai/",
+                "models": "https://ai.google.dev/gemini-api/docs/models",
+                "pricing": "https://ai.google.dev/gemini-api/docs/pricing"
+            }
         },
         "grok": {
             "available models": [
-                "grok-4-1-fast-reasoning",
-                "grok-4-1-fast-non-reasoning",
-                "grok-code-fast-1",
-                "grok-4-fast-reasoning",
-                "grok-4-fast-non-reasoning"
+                "grok-build-0.1",
+                "grok-4.3",
+                "grok-4.20-multi-agent-0309",
+                "grok-4.20-0309-reasoning",
+                "grok-4.20-0309-non-reasoning"
             ],
-            "base url": "https://api.x.ai/v1/responses"
+            "urls": {
+                "api": "https://api.x.ai/v1/responses",
+                "models": "https://docs.x.ai/developers/models",
+                "pricing": "https://docs.x.ai/developers/pricing"
+            }
         },
         "openai": {
             "available models": [
+                "gpt-5.5",
+                "gpt-5.4",
+                "gpt-5.4-mini",
+                "gpt-5.4-nano",
+                "gpt-5.2",
+                "gpt-5.1",
+                "gpt-5.1-codex-mini",
+                "gpt-5",
                 "gpt-5-mini",
-                "gpt-5-nano",
-                "gpt-4.1-mini",
-                "gpt-4.1-nano",
-                "o4-mini",
-                "gpt-5.1-codex-mini"
+                "gpt-5-nano"
             ],
-            "base url": "https://api.openai.com/v1"
+            "urls": {
+                "api": "https://api.openai.com/v1",
+                "models": "https://developers.openai.com/api/docs/models",
+                "pricing": "https://developers.openai.com/api/docs/pricing"
+            }
         }
     }
 }

@@ -69,7 +69,7 @@ class ChatbotAgent(ChatbotContextHelper):
         # Create an object for easier lookup of available models
         self.models = {}
         for provider, details in available_models.items():
-            base_url = details["base url"]
+            base_url = details["urls"]["api"]
             api_key = provider_api_keys[provider]
             self.models.update({
                 model: {
