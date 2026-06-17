@@ -1,10 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
-## [v0.0.5] (WIP)  
+## [v0.0.4] (WIP)  
 * Added context file caching in `src/chatbot/core/context.py` to avoid loading and parsing the YAML files from scratch on every context fetch.  
-* Updated instructions in `README.md` when running `Dockerfile.dev`: the container can now only read the project's directory without being able to write to it. Previously, this caused issues when running from a Windows machine due to symlink conflicts between the container (Linux subsystem) and Windows that prevented `uv` from running correctly.  
 * Deprecated Streamlit UI and removed as dependency for the project.  
+* Updated instructions in `README.md` when running `Dockerfile.dev`: the container can now only read the project's directory without being able to write to it. Previously, this caused issues when running from a Windows machine due to symlink conflicts between the container (Linux subsystem) and Windows that prevented `uv` from running correctly.  
+* Added a new environment variable, `LOG_LEVEL`, by which it's possible to control the minimum hierarchy level in which logs from `loguru.logger` are sent to stderr.  
+
 
 ## [v0.0.3]  
 * Replaced the Streamlit UI with a Single-Page-Application (SPA) using HTML, JavaScript and CSS connected to a `FastAPI` backend which handles interactions to the chatbot agent class. This change provides greater flexibility and scalability as the app grows in capabilities going forward. Streamlit is still included in the project but will be deprecated in a future version.   

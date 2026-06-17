@@ -2,6 +2,7 @@
 # Built-ins
 import json
 import os
+import sys
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -57,6 +58,17 @@ class AppConfig:
         provider: os.getenv(f"{provider.upper()}_API_KEY")
         for provider in AVAILABLE_MODELS.keys()
     }
+
+    # Determine logging level
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper().strip()
+    if LOG_LEVEL not in logger._core.levels:
+        raise ValueError(
+            f"Invalid LOG_LEVEL provided: '{LOG_LEVEL}'. "
+            f"Valid options: {list(logger._core.levels.keys())}"
+        )
+    if LOG_LEVEL != "DEBUG":
+        logger.remove()
+        logger.add(sys.stderr, level=LOG_LEVEL)
 
     # Log initialized config
     logger.info(
