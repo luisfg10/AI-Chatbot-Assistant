@@ -304,11 +304,9 @@ class ChatbotAgent(ChatbotContextHelper):
         Returns
         -------
             str | None
-                The generated response from the chatbot as a string, or None if the API call fails.
+                The generated response from the chatbot as a string,
+                or None if the API call fails.
         """
-        # Memory management
-        self._update_memory(debug=debug)
-
         # Chatbot API call
         system_prompt = self.prompts.get("chatbot system")
         user_prompt = self.get_chatbot_user_prompt(
@@ -328,6 +326,9 @@ class ChatbotAgent(ChatbotContextHelper):
             "chatbot": llm_response
         })
         self.turns["total"] += 1
+
+        # Memory management
+        self._update_memory(debug=debug)
 
         return llm_response
 
