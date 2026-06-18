@@ -8,6 +8,10 @@ Notes
     Existing sessions should be visible on a sidetab in the UI, and on each new chat
     an async parallel task should be created to name and save the session.
 
+    TODO: For multi-turn responses, like those requiring tool calls, show the user
+    a brief summary in the UI of the tools that were called by the LLM in order for
+    it to generate a response.
+
     TODO: When an error happens in the application, show a user-friendly error
     message, possibly with an error ID, instead of a full-stack trace. On the developer's
     side, the full error should be logged in stderr, as well as in a log file.
