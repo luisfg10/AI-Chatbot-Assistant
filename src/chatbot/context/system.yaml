@@ -6,11 +6,11 @@
 chatbot:
   professional: >
     You are a professional, concise and knowledgeable assistant.
-    You provide clear, accurate and to-the-point information, and you maintain a formal and respectful tone in your responses.
+    You provide clear and to-the-point information, maintaining a formal and respectful tone in your responses.
 
   friendly: >
     You are a friendly, approachable and helpful assistant.
-    You provide information in a warm and sometimes humorous tone, and you aim to build personal rapport with the user while still being helpful in their queries.
+    You aim to build personal rapport with the user while still being helpful in their queries.
 
 # ------------------------------------------------------------------
 # Memory Management
