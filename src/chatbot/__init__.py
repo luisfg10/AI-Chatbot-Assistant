@@ -12,6 +12,9 @@ Notes
     their custom personalities, which should also be persisted across sessions.
 
     TODO: Switch to more advanced agent memory and compacting techniques.
+
+    TODO: Add a max number of tool executions before an answer in order to avoid
+    infinite loops.
 """
 from .core.agent import ChatbotAgent
 

@@ -1,8 +1,14 @@
+import json
+
 from loguru import logger
 from openai import OpenAI
 
 from config import AppConfig
 from src.chatbot.core.context import ChatbotContextHelper
+from src.chatbot.tools import (
+    tool_registry,
+    tool_schema
+)
 
 
 class ChatbotAgent(ChatbotContextHelper):
@@ -193,29 +199,46 @@ class ChatbotAgent(ChatbotContextHelper):
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        tools: list[dict] | None = None,
-        debug: bool = True
+        tools: list[dict] | None = None
     ) -> str | None:
         """
         Call the LLM API and return the generated response.
 
-        Includes special considerations for certain OpenAI models for which parameter
-        names have changed.
+        Includes special considerations for certain OpenAI models for
+        which parameter names have changed.
+
+        Includes several debugging statements. Control whether these are
+        printed to stderr using the env var LOG_LEVEL.
 
         Parameters
         ----------
             user_prompt: str
                 The user's input prompt to the chatbot.
             system_prompt: Optional[str]
-                An optional system prompt to provide additional context or instructions to the LLM.
+                An optional system prompt to provide additional context or
+                instructions to the LLM.
             tools: Optional[list[dict]]
-                An optional list of tools to provide to the LLM for enhanced capabilities.
-            debug: bool
-                Whether to print debug information about the API call. Defaults to True.
+                An optional list of tools to provide to the LLM for enhanced
+                capabilities.
 
         Returns
         -------
-            The generated response from the LLM as a string, or None if the API call fails.
+            The generated response from the LLM as a string, or None if the
+            API call fails.
+
+        Notes
+        ------
+            Below is an example of the return value of
+            response.choices[0].message.tool_calls[0] when the LLM
+            chooses to make use of a tool:
+                ChatCompletionMessageFunctionToolCall(
+                    id='function-call-11536159245627890280',
+                    function=Function(
+                        arguments='{}',
+                        name='get_current_date'
+                    ),
+                    type='function'
+                )
         """
         if not (isinstance(user_prompt, str) and len(user_prompt) > 0):
             raise ValueError("'user_prompt' must be a non-empty string.")
@@ -244,52 +267,96 @@ class ChatbotAgent(ChatbotContextHelper):
 
         # Return API response
         response = self.client.chat.completions.create(**params)
-        response_content = response.choices[0].message.content if response.choices else None
-        if debug:
-            logger.debug(f"LLM API Call - Params: {params}")
+        response_content = (
+            response.choices[0].message.content
+            if response.choices else None
+        )
+
+        # Debug statements
+        logger.debug(f"LLM API Call - Params: {params}")
+        logger.debug(
+            f"Response finish reason: {response.choices[0].finish_reason}"
+        )
+        if response_content:
             logger.debug(f"LLM API Call - Response: {response_content}")
+        if response.choices[0].finish_reason == "tool_calls":
+            logger.debug(
+                "Tool calls payload: "
+                f"{response.choices[0].message.tool_calls}"
+            )
+            self.llm_tool_call(response.choices[0].message.tool_calls)
 
         return response_content
 
-    def _update_memory(self, debug: bool = True) -> None:
+    @staticmethod
+    def llm_tool_call(
+            tool_calls: list,
+            tool_registry: dict[str, callable] = tool_registry
+    ) -> list:
         """
-        Update the chatbot's memory based on recent conversation history and long-term memory.
+        Execute a tool call and add the results to the messages list.
 
-        Cleanup is performed by making an API call which looks to summarize the recent conversation
-        and extract any key details to be saved to long-term memory, while discarding the rest.
+        Compatible with OpenAI's chat completions endpoint.
 
         Parameters
         ----------
-            debug: bool
-                Whether to print debug information about the memory update process. Defaults to True.
+            tool_calls: list
+                List with the tool calls to be made from the OpenAI
+                chat completions endpoint.
+            tool_registry: dict
+                A dictionary mapping tool names to the actual Python
+                functions, aka tools.
 
         Returns
         -------
-            None
-                Updates the chatbot's memory to the self.memory attribute.
+            list
+                A list with the results of each made tool call.
+
+        >>> tool_results = ChatbotAgent().llm_tool_call(
+            [
+                ChatCompletionMessageFunctionToolCall(
+                    id='function-call-6050399',
+                    function=Function(
+                        arguments='{}',
+                        name='get_current_date'
+                    ),
+                    type='function'),
+                ...
+            ]
+            )
+        >>> print(tool_results)
+            [
+                {
+                    'role': 'tool',
+                    'tool_call_id': 'function-call-6050399',
+                    'content': '2026-06-27'
+                },
+                ...
+            ]
         """
-        # skip if memory update is not needed
-        if self.turns["total"] % self.turns["context cleanup limit"] != 0:
-            return
+        results = []
+        for tool_call in tool_calls:
+            # Unpack the elements to call
+            tool_name = tool_call.function.name
+            args = json.loads(tool_call.function.arguments)
 
-        # recalculate long-term memory
-        new_long_term_memory = self.llm_api_call(
-            user_prompt=self.get_memory_manager_user_prompt(
-                recent_conversation=self.memory["short term"],
-                long_term_memory=self.memory["long term"]
-            ),
-            system_prompt=self.prompts.get("memory manager system"),
-            debug=debug
-        )
+            function_to_run = tool_registry.get(tool_name)
+            if function_to_run is None:
+                raise ValueError(f"Unknown tool: {function_to_run}")
 
-        # update memory to self
-        self.memory["long term"] = new_long_term_memory
-        self.memory["short term"] = []
+            result = function_to_run(**args)
+            results.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": str(result)
+            })
+
+        return results
 
     def chatbot_call(
             self,
             user_query: str,
-            debug: bool = True
+            tools: dict = tool_schema
     ) -> str | None:
         """
         Make a chatbot API call with included context management.
@@ -298,8 +365,8 @@ class ChatbotAgent(ChatbotContextHelper):
         ----------
             user_query: str
                 The user's input query to the chatbot.
-            debug: bool
-                Whether to print debug information about the chatbot call process. Defaults to True.
+            tools: dict
+                Dictionary containing the tools the LLM can call.
 
         Returns
         -------
@@ -317,7 +384,7 @@ class ChatbotAgent(ChatbotContextHelper):
         llm_response = self.llm_api_call(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
-            debug=debug
+            tools=tools
         )
 
         # Update memory and turns
@@ -328,15 +395,46 @@ class ChatbotAgent(ChatbotContextHelper):
         self.turns["total"] += 1
 
         # Memory management
-        self._update_memory(debug=debug)
+        self._update_memory()
 
         return llm_response
+
+    def _update_memory(self) -> None:
+        """
+        Update the chatbot's memory based on conversation history.
+
+        Cleanup is performed by making an API call which looks to summarize
+        the recent conversation and extract any key details to be saved to
+        long-term memory, while discarding the rest.
+
+        Returns
+        -------
+            None
+                Updates the chatbot's memory to the self.memory attribute.
+        """
+        # skip if memory update is not needed
+        if self.turns["total"] % self.turns["context cleanup limit"] != 0:
+            return
+
+        # recalculate long-term memory
+        new_long_term_memory = self.llm_api_call(
+            user_prompt=self.get_memory_manager_user_prompt(
+                recent_conversation=self.memory["short term"],
+                long_term_memory=self.memory["long term"]
+            ),
+            system_prompt=self.prompts.get("memory manager system")
+        )
+
+        # update memory to self
+        self.memory["long term"] = new_long_term_memory
+        self.memory["short term"] = []
 
     def reset_memory(self) -> None:
         """
         Reset the chatbot's memory, clearing both long-term and short-term memory.
 
-        This can be useful for starting a new conversation or clearing any accumulated context.
+        This can be useful for starting a new conversation or clearing any
+        accumulated context.
 
         Returns
         -------
