@@ -1,7 +1,8 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
-## [v0.0.4] (WIP)  
+## [v0.0.4]  
+* Significant change in memory management: The messages list now has an appended message on each significant piece of information (base instructions, user message, chatbot response, tool call decision and execution). This is a necessary change before the introduction of actual tool calls, and aligns the project with commonly-used standards.     
 * Added context file caching in `src/chatbot/core/context.py` to avoid loading and parsing the YAML files from scratch on every context fetch.  
 * Deprecated Streamlit UI and removed as dependency for the project.  
 * Updated instructions in `README.md` when running `Dockerfile.dev`: the container can now only read the project's directory without being able to write to it. Previously, this caused issues when running from a Windows machine due to symlink conflicts between the container (Linux subsystem) and Windows that prevented `uv` from running correctly.  

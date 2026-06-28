@@ -1,13 +1,16 @@
+import json
+
 from loguru import logger
 from openai import OpenAI
 
 from config import AppConfig
 from src.chatbot.core.context import ChatbotContextHelper
+from src.chatbot.tools import tool_registry, tool_schema
 
 
 class ChatbotAgent(ChatbotContextHelper):
     """
-    Class for chatbot agent that can be used to generate responses based on user input and context.
+    Class for chatbot agent that interacts with a user via a chat interface.
 
     Inherits from ChatbotContextHelper for managing the chatbot's context.
     """
@@ -18,7 +21,7 @@ class ChatbotAgent(ChatbotContextHelper):
             provider_api_keys: dict = AppConfig.PROVIDER_API_KEYS,
             default_chatbot_config: dict = AppConfig.DEFAULT_CONFIG,
             supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
-            fallback_turns_for_context_cleanup: int = 10
+            fallback_compacting_msg_limit: int = 10
     ) -> None:
         """
         Initialize the ChatbotAgent.
@@ -26,27 +29,29 @@ class ChatbotAgent(ChatbotContextHelper):
         Parameters
         ----------
             available_models: dict
-                A dictionary of available LLM providers and their corresponding models,
-                as defined in the app config.
+                A dictionary of available LLM providers and their corresponding
+                models, as defined in the app config.
             provider_api_keys: dict
                 A dictionary mapping LLM providers to their corresponding API keys,
                 as defined in the app config.
             default_chatbot_config: dict
-                A dictionary containing the default configuration for the chatbot, including default
-                LLM provider, model code, and other settings.
+                A dictionary containing the default configuration for the chatbot,
+                including default LLM provider, model code, and other settings.
             supported_chatbot_personalities: list
                 A list of supported chatbot personalities.
-                Each personality string should have matching system prompt templates in the directory
-                path AppConfig.CHATBOT_CONTEXT_DIR
-            fallback_turns_for_context_cleanup: int
-                A fallback value for the number of conversation turns before context cleanup is triggered,
-                in case the value provided in the app config is invalid.
+                Each personality string should have matching system prompt
+                templates in the directory path AppConfig.CHATBOT_CONTEXT_DIR
+            fallback_compacting_msg_limit: int
+                A fallback value for the number of conversation turns before memory
+                compacting is triggered, in case the value provided in the app config
+                is invalid.
 
         Attributes
         ----------
             models: dict
-                A dictionary for conveniently storing connection parameters for the different available
-                LLM providers so different Chatbot clients can be created as needed.
+                A dictionary for conveniently storing connection parameters for the
+                different available LLM providers so different Chatbot clients can
+                be created as needed.
                 e.g.,
                     {
                         "gemini-flash-2.5": {
@@ -56,15 +61,12 @@ class ChatbotAgent(ChatbotContextHelper):
                     }
             supported_chatbot_personalities: list
                 A list of supported chatbot personalities, as defined in the app config.
-            memory: dict
-                A dictionary to store the chatbot's memory, including long-term and short-term memory.
-                * Long-term memory: Key facts about the user and and the conversation that should be retained.
-                * Short-term memory: A list of the most recent conversation turns, which are eventually either
-                saved to long-term memory or discarded during context cleanup.
         """
         # Raise if no models are available based on the app config
         if not isinstance(available_models, dict) or len(available_models) == 0:
-            raise ValueError("Didn't receive a valid value for `available_models`.")
+            raise ValueError(
+                f"Value for `available_models` is invalid: {available_models}"
+            )
 
         # Create an object for easier lookup of available models
         self.models = {}
@@ -84,7 +86,10 @@ class ChatbotAgent(ChatbotContextHelper):
             not isinstance(self.supported_chatbot_personalities, (list, tuple))
             or not self.supported_chatbot_personalities
         ):
-            raise ValueError("Didn't receive a valid value for `supported_chatbot_personalities`.")
+            raise ValueError(
+                "Didn't receive a valid value for "
+                "`supported_chatbot_personalities`."
+            )
 
         # Set default model to show on Chatbot startup
         default_model = default_chatbot_config.get("model")
@@ -105,23 +110,18 @@ class ChatbotAgent(ChatbotContextHelper):
                 and max_completion_tokens > 0 else None
         )
 
-        turns_for_context_cleanup = default_chatbot_config.get("turns before context cleanup")
-        if not isinstance(turns_for_context_cleanup, int) or turns_for_context_cleanup <= 0:
+        # Set # messages in messages list before memory compacting
+        compacting_msg_limit = default_chatbot_config.get("compacting message limit")
+        if not isinstance(compacting_msg_limit, int) or compacting_msg_limit <= 0:
             logger.error(
-                f"Invalid value for 'turns before context cleanup': {turns_for_context_cleanup}. "
-                f"Defaulting to {fallback_turns_for_context_cleanup}."
+                f"Invalid value for `compacting message limit`: {compacting_msg_limit}. "
+                f"Defaulting to {fallback_compacting_msg_limit}."
             )
-            turns_for_context_cleanup = fallback_turns_for_context_cleanup
-        self.turns = {
-            "context cleanup limit": turns_for_context_cleanup,
-            "total": 0
-        }
+            compacting_msg_limit = fallback_compacting_msg_limit
+        self.compacting_msg_limit = compacting_msg_limit
 
-        # Init empty memory
-        self.memory = {
-            "long term": None,
-            "short term": []
-        }
+        # Init messages list
+        self.messages: list[dict] = []
 
         # Initialize context helper
         super().__init__()
@@ -164,73 +164,80 @@ class ChatbotAgent(ChatbotContextHelper):
             personality: str | None = None
     ) -> None:
         """
-        Set the chatbot's system prompts to the self, which are determined by its specified personality.
+        Set the chatbot's instructions depending on its selected personality.
 
-        This method may be called during initialization or at any other time to update
-        the chatbot's prompts based on a new input.
+        This method may be called during initialization or at any other time
+        to update the chatbot's prompts based on a new input.
+        Modifies the first message in the messages list to the self.
 
         Parameters
         ----------
             personality: str | None
                 The personality for which to set the chatbot's system prompts.
-                If not provided, defaults to the default personality saved to the self.
+                If not provided, defaults to the default personality saved to
+                the self.
 
         Returns
         -------
             None
-                Sets the self.prompts attribute to a dictionary containing the system prompts for the chatbot,
-                which are determined by the specified personality.
+                Updates the first message in the messages list containing the
+                chatbot's isntructions.
+                In the case of the instructions for compacting, saves the instructions
+                to use to the self.
         """
         if personality not in self.supported_chatbot_personalities:
             personality = self.default_personality
 
-        self.prompts = {
-            "chatbot system": self.get_chatbot_system_prompt(personality),
-            "memory manager system": self.get_memory_manager_system_prompt(personality),
+        # Chatbot instructions
+        chatbot_instructions = self.get_chatbot_instructions(personality)
+        instructions_message = {
+            "role": "system",
+            "content": chatbot_instructions
         }
+
+        if len(self.messages) > 0:
+            self.messages[0] = instructions_message
+        else:
+            self.messages.append(instructions_message)
+
+        # Compacting
+        self.compacting_instructions = self.get_compacting_instructions(personality)
 
     def llm_api_call(
         self,
-        user_prompt: str,
-        system_prompt: str | None = None,
-        tools: list[dict] | None = None,
-        debug: bool = True
+        messages: list[dict],
+        tools: list[dict] | None = None
     ) -> str | None:
         """
         Call the LLM API and return the generated response.
 
-        Includes special considerations for certain OpenAI models for which parameter
-        names have changed.
+        Includes special considerations for certain OpenAI models for
+        which parameter names have changed.
+
+        Includes several debugging statements. Control whether these are
+        printed to stderr using the env var LOG_LEVEL.
 
         Parameters
         ----------
-            user_prompt: str
-                The user's input prompt to the chatbot.
-            system_prompt: Optional[str]
-                An optional system prompt to provide additional context or instructions to the LLM.
+            messages: list[dict]
+                A list of messages containing the current conversation history.
             tools: Optional[list[dict]]
-                An optional list of tools to provide to the LLM for enhanced capabilities.
-            debug: bool
-                Whether to print debug information about the API call. Defaults to True.
+                An optional list of tools to provide to the LLM for enhanced
+                capabilities.
 
         Returns
         -------
-            The generated response from the LLM as a string, or None if the API call fails.
+            The generated response from the LLM as a string, or None if the
+            API call fails.
         """
-        if not (isinstance(user_prompt, str) and len(user_prompt) > 0):
-            raise ValueError("'user_prompt' must be a non-empty string.")
-
-        # Build messages body
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": user_prompt})
-
         params = {
             "model": self.model_code,
             "messages": messages
         }
-        if hasattr(self, "max_completion_tokens") and self.max_completion_tokens:
+        if (
+            hasattr(self, "max_completion_tokens")
+            and self.max_completion_tokens
+        ):
             if self.model_code in [
                 "gpt-5-mini",
                 "gpt-5-nano"
@@ -244,52 +251,96 @@ class ChatbotAgent(ChatbotContextHelper):
 
         # Return API response
         response = self.client.chat.completions.create(**params)
-        response_content = response.choices[0].message.content if response.choices else None
-        if debug:
-            logger.debug(f"LLM API Call - Params: {params}")
-            logger.debug(f"LLM API Call - Response: {response_content}")
+        response_content = (
+            response.choices[0].message.content
+            if response.choices else None
+        )
+
+        # Debug statements
+        logger.debug(f"LLM API Call - Params: {params}")
+        if response_content:
+            logger.debug(f"LLM Response: {response_content}")
+        if response.choices[0].finish_reason == "tool_calls":
+            logger.debug(
+                "Response finish reason: tool_calls."
+            )
+            logger.debug(
+                "Tool calls payload: "
+                f"{response.choices[0].message.tool_calls}"
+            )
+            self.llm_tool_call(response.choices[0].message.tool_calls)
 
         return response_content
 
-    def _update_memory(self, debug: bool = True) -> None:
+    @staticmethod
+    def llm_tool_call(
+            tool_calls: list,
+            tool_registry: dict[str, callable] = tool_registry
+    ) -> list:
         """
-        Update the chatbot's memory based on recent conversation history and long-term memory.
+        Execute a tool call and add the results to the messages list.
 
-        Cleanup is performed by making an API call which looks to summarize the recent conversation
-        and extract any key details to be saved to long-term memory, while discarding the rest.
+        Compatible with OpenAI's chat completions endpoint.
 
         Parameters
         ----------
-            debug: bool
-                Whether to print debug information about the memory update process. Defaults to True.
+            tool_calls: list
+                List with the tool calls to be made from the OpenAI
+                chat completions endpoint.
+            tool_registry: dict
+                A dictionary mapping tool names to the actual Python
+                functions, aka tools.
 
         Returns
         -------
-            None
-                Updates the chatbot's memory to the self.memory attribute.
+            list
+                A list with the results of each made tool call.
+
+        >>> tool_results = ChatbotAgent().llm_tool_call(
+            [
+                ChatCompletionMessageFunctionToolCall(
+                    id='function-call-6050399',
+                    function=Function(
+                        arguments='{}',
+                        name='get_current_date'
+                    ),
+                    type='function'),
+                ...
+            ]
+            )
+        >>> print(tool_results)
+            [
+                {
+                    'role': 'tool',
+                    'tool_call_id': 'function-call-6050399',
+                    'content': '2026-06-27'
+                },
+                ...
+            ]
         """
-        # skip if memory update is not needed
-        if self.turns["total"] % self.turns["context cleanup limit"] != 0:
-            return
+        results = []
+        for tool_call in tool_calls:
+            # Unpack the elements to call
+            tool_name = tool_call.function.name
+            args = json.loads(tool_call.function.arguments)
 
-        # recalculate long-term memory
-        new_long_term_memory = self.llm_api_call(
-            user_prompt=self.get_memory_manager_user_prompt(
-                recent_conversation=self.memory["short term"],
-                long_term_memory=self.memory["long term"]
-            ),
-            system_prompt=self.prompts.get("memory manager system"),
-            debug=debug
-        )
+            function_to_run = tool_registry.get(tool_name)
+            if function_to_run is None:
+                raise ValueError(f"Unknown tool: {function_to_run}")
 
-        # update memory to self
-        self.memory["long term"] = new_long_term_memory
-        self.memory["short term"] = []
+            result = function_to_run(**args)
+            results.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": str(result)
+            })
+
+        return results
 
     def chatbot_call(
             self,
             user_query: str,
-            debug: bool = True
+            tools: dict = tool_schema
     ) -> str | None:
         """
         Make a chatbot API call with included context management.
@@ -298,51 +349,103 @@ class ChatbotAgent(ChatbotContextHelper):
         ----------
             user_query: str
                 The user's input query to the chatbot.
-            debug: bool
-                Whether to print debug information about the chatbot call process. Defaults to True.
+            tools: dict
+                Dictionary containing the tools the LLM can call.
 
         Returns
         -------
             str | None
-                The generated response from the chatbot as a string, or None if the API call fails.
+                The generated response from the chatbot as a string,
+                or None if the API call fails.
         """
-        # Memory management
-        self._update_memory(debug=debug)
-
-        # Chatbot API call
-        system_prompt = self.prompts.get("chatbot system")
-        user_prompt = self.get_chatbot_user_prompt(
-            user_query=user_query,
-            long_term_memory=self.memory["long term"],
-            short_term_memory=self.memory["short term"]
-        )
-        llm_response = self.llm_api_call(
-            user_prompt=user_prompt,
-            system_prompt=system_prompt,
-            debug=debug
-        )
-
-        # Update memory and turns
-        self.memory["short term"].append({
-            "user": user_query,
-            "chatbot": llm_response
+        # Append user query to messages
+        self.messages.append({
+            "role": "user",
+            "content": user_query
         })
-        self.turns["total"] += 1
+
+        llm_response = self.llm_api_call(
+            messages=self.messages,
+            tools=tools
+        )
+
+        # Update messages list
+        self.messages.append({
+            "role": "assistant",
+            "content": llm_response
+        })
+
+        # Evaluate compacting
+        self._compact_messages()
 
         return llm_response
+
+    def _compact_messages(self) -> None:
+        """
+        Run compacting to summarize the key details in the current conversation.
+
+        Makes a transcript of the current messages list as a single string,
+        then sends as a user message along with the compacting instruction.
+
+        Returns
+        -------
+            None
+                Updates the chatbot's messages list attribute.
+                Keeps two messages in the messages list:
+                    1. The chatbot instructions
+                    2. The conversation summary so far
+        """
+        # Skip if memory update is not needed
+        if self.compacting_msg_limit % len(self.messages) != 0:
+            return
+
+        # Check if long-term memory exists
+        long_term_memory = (
+            self.long_term_memory
+            if hasattr(self, "long_term_memory")
+            and isinstance(self.long_term_memory, str)
+            and len(self.long_term_memory) > 0
+            else None
+        )
+
+        # Get user prompt and format
+        conversation_history = self.messages[1:]  # exclude chatbot instructions
+        compacting_user_prompt = self.get_compacting_user_prompt(
+            recent_conversation=conversation_history,
+            long_term_memory=long_term_memory
+        )
+
+        # Make API call
+        messages = [
+            {"role": "system", "content": self.compacting_instructions},
+            {"role": "user", "content": compacting_user_prompt}
+        ]
+        conversation_summary = self.llm_api_call(
+            messages=messages
+        )
+
+        # Update messages list
+        summary_message = self.get_conversation_summary_prompt(
+            conversation_summary
+        )
+        self.messages[1] = {
+            "role": "system",
+            "content": summary_message
+        }
+        self.messages = self.messages[: 2]  # remove short-term messages from list
+        self.long_term_memory = conversation_summary
 
     def reset_memory(self) -> None:
         """
         Reset the chatbot's memory, clearing both long-term and short-term memory.
 
-        This can be useful for starting a new conversation or clearing any accumulated context.
+        This can be useful for starting a new conversation or clearing any
+        accumulated context.
 
         Returns
         -------
             None
-                Resets the chatbot's memory to an empty state.
+                Resets the chatbot's memory to an empty state, outside of its
+                instructions based on personality.
         """
-        self.memory = {
-            "long term": None,
-            "short term": []
-        }
+        self.messages = self.messages[:1]

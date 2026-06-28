@@ -3,7 +3,7 @@
         "model": "gemini-2.5-flash",
         "personality": "friendly",
         "max completion tokens": 2000,
-        "turns before context cleanup": 10
+        "compacting message limit": 30
     },
     "supported chatbot personalities": [
         "friendly",
