@@ -217,7 +217,7 @@ class ChatbotContextHelper(BaseContextHelper):
         return system_prompt_template.format(**{
             "chatbot personality prompt": personality_prompt
         })
-    
+
     @staticmethod
     def transcribe_messages_list(messages: list) -> str:
         """
@@ -290,12 +290,12 @@ class ChatbotContextHelper(BaseContextHelper):
         messages_transcription = self.transcribe_messages_list(
             recent_conversation
         )
-        
+
         return memory_template.format(**{
             "short term memory": messages_transcription,
             "long term memory": long_term_memory or "Empty."
         })
-    
+
     def get_conversation_summary_prompt(
             self,
             summary: str

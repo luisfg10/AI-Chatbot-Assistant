@@ -5,15 +5,12 @@ from openai import OpenAI
 
 from config import AppConfig
 from src.chatbot.core.context import ChatbotContextHelper
-from src.chatbot.tools import (
-    tool_registry,
-    tool_schema
-)
+from src.chatbot.tools import tool_registry, tool_schema
 
 
 class ChatbotAgent(ChatbotContextHelper):
     """
-    Class for chatbot agent that interacts with a user via a chat interface,
+    Class for chatbot agent that interacts with a user via a chat interface.
 
     Inherits from ChatbotContextHelper for managing the chatbot's context.
     """
@@ -401,7 +398,7 @@ class ChatbotAgent(ChatbotContextHelper):
         # Skip if memory update is not needed
         if self.compacting_msg_limit % len(self.messages) != 0:
             return
-        
+
         # Check if long-term memory exists
         long_term_memory = (
             self.long_term_memory
@@ -412,7 +409,7 @@ class ChatbotAgent(ChatbotContextHelper):
         )
 
         # Get user prompt and format
-        conversation_history = self.messages[1: ]  # exclude chatbot instructions
+        conversation_history = self.messages[1:]  # exclude chatbot instructions
         compacting_user_prompt = self.get_compacting_user_prompt(
             recent_conversation=conversation_history,
             long_term_memory=long_term_memory
@@ -451,4 +448,4 @@ class ChatbotAgent(ChatbotContextHelper):
                 Resets the chatbot's memory to an empty state, outside of its
                 instructions based on personality.
         """
-        self.messages = self.messages[ :1]
+        self.messages = self.messages[:1]
