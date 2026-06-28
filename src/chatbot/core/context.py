@@ -155,7 +155,6 @@ class ChatbotContextHelper(BaseContextHelper):
 
         Assumes a two-file distribution of chatbot context: one for system
         prompts and one for user prompts.
-        If this structure changes, this class will need to be updated accordingly.
 
         Parameters
         ----------
@@ -186,94 +185,31 @@ class ChatbotContextHelper(BaseContextHelper):
 
         super().__init__(file_caching=file_caching)
 
-    def get_chatbot_system_prompt(
+    def get_chatbot_instructions(
             self,
             personality: str,
     ) -> str:
-        """Get the system prompt for the chatbot based on the specified personality."""
+        """Get the chatbot's instructions based on its personality."""
         outer_key = self.load_and_format_context(
                 file_path=self.context_dir + self.system_prompts_filename,
                 key_name="chatbot"
             )
         return outer_key[personality]
 
-    def get_chatbot_user_prompt(
-            self,
-            user_query: str,
-            long_term_memory: str | None = None,
-            short_term_memory: list[dict] | None = None,
-            user_input_key: str = "user",
-            chatbot_response_key: str = "chatbot"
-    ) -> str:
-        """
-        Get the user prompt for the chatbot, optionally including conversation history.
-
-        Parameters
-        ----------
-            user_query: str
-                The current user's query to include in the prompt.
-                e.g., "What is the capital of France?"
-            long_term_memory: str | None
-                Optional long-term memory to include in the prompt, which may contain
-                key facts about the user and the conversation that should be retained.
-                e.g., "The user's name is John and they seem to be interested in geography."
-            short_term_memory: list[dict] | None
-                Optional short-term memory to include in the prompt.
-            user_input_key: str
-                The key in the conversation turn dictionaries that corresponds to the
-                user's input. Defaults to "user".
-            chatbot_response_key: str
-                The key in the conversation turn dictionaries that corresponds to the
-                chatbot's response. Defaults to "chatbot".
-
-        Returns
-        -------
-            str
-                The formatted user prompt.
-        """
-        outer_key = self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_filename,
-            key_name="chatbot"
-        )
-        user_prompt_template = outer_key["template"]
-
-        memory_prompt = ""
-        if long_term_memory or short_term_memory:
-            memory_template = outer_key["memory template"]
-            short_term_memory_template = self.load_and_format_context(
-                file_path=self.context_dir + self.user_prompts_filename,
-                key_name="short term memory template"
-            )
-            short_term_memory_prompt = "\n".join([
-                short_term_memory_template.format(**{
-                    "turn number": position + 1,
-                    "user input": contents.get(user_input_key),
-                    "chatbot response": contents.get(chatbot_response_key)
-                }) for position, contents in enumerate(short_term_memory)
-            ]) if short_term_memory else "Not available."
-            memory_prompt = memory_template.format(**{
-                "long term memory": long_term_memory or "Not available.",
-                "short term memory": short_term_memory_prompt
-            })
-        return user_prompt_template.format(**{
-            "memory": memory_prompt,
-            "user query": user_query
-        })
-
-    def get_memory_manager_system_prompt(
+    def get_compacting_instructions(
             self,
             personality: str
     ) -> str:
         """
-        Get the system prompt for the memory manager based on personality.
+        Get and format the instructions for compacting the messages list.
 
-        Note the personality is used to refine which details of the conversation
-        are important for the memory manager to retain.
+        The chatbot's personality is used to decide which details of the
+        conversation are important to retain.
         """
         # Fetch base key
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.system_prompts_filename,
-            key_name="memory manager"
+            key_name="memory compacting"
         )
         system_prompt_template = outer_key["template"]
         personality_prompt = outer_key["personalities"][personality]
@@ -281,39 +217,63 @@ class ChatbotContextHelper(BaseContextHelper):
         return system_prompt_template.format(**{
             "chatbot personality prompt": personality_prompt
         })
+    
+    @staticmethod
+    def transcribe_messages_list(messages: list) -> str:
+        """
+        Convert a list of chatbot-user messages into a readable transcript.
 
-    def get_memory_manager_user_prompt(
+        This method is used as part of memory compacting for the ChatbotAgent,
+        and its output is to be passed on as a user message in the messages list.
+        """
+        transcript = ""
+        for message in messages:
+            role = message["role"]
+            if role == "tool":
+                transcript += f"tool result: {message['content']}\n"
+
+            elif role == "assistant" and message.get("tool_calls"):
+                for tool_call in message["tool_calls"]:
+                    transcript += (
+                        "assistant called tool: "
+                        f"{tool_call['function']['name']}\n"
+                    )
+            else:
+                transcript += f"{role}: {message['content']}\n"
+        return transcript
+
+    def get_compacting_user_prompt(
             self,
             recent_conversation: list[dict],
-            long_term_memory: str | None = None,
-            user_input_key: str = "user",
-            chatbot_response_key: str = "chatbot"
+            long_term_memory: str | None = None
     ) -> str:
         """
         Get the user prompt for the memory manager.
 
+        The list of recent conversation messages is transcribed to a
+        single string before formatting into the prompt.
+
         Parameters
         ----------
             recent_conversation: list[dict]
-                A list of recent conversation turns, where each turn is
-                represented as a dictionary.
+                A list of recent conversation messages.
                 e.g.,
-                    [{
-                        "user": "What is the capital of France?",
-                        "chatbot": "The capital of France is Paris."
-                    }, ...
+                    [
+                        {
+                            "role": "user",
+                            "content": "What is the capital of France?"
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "The capital of France is Paris."
+                        },
+                        ...
                     ]
             long_term_memory: str | None
                 Optional long-term memory to include in the user prompt,
                 which may contain key facts about the user and the conversation
                 that should be retained.
-                e.g., "The user's name is John and they seem to be interested in geography."
-            user_input_key: str
-                The key in the conversation turn dictionaries that corresponds to the
-                user's input. Defaults to "user".
-            chatbot_response_key: str
-                The key in the conversation turn dictionaries that corresponds to the
-                chatbot's response. Defaults to "chatbot".
+                e.g., "The user's name is John and they like cars."
 
         Returns
         -------
@@ -322,24 +282,29 @@ class ChatbotContextHelper(BaseContextHelper):
         """
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.user_prompts_filename,
-            key_name="memory manager"
+            key_name="memory compacting"
         )
-        # Format recent conversation into string representation
-        short_term_template = self.load_and_format_context(
-            file_path=self.context_dir + self.user_prompts_filename,
-            key_name="short term memory template"
-        )
-        short_term_memory = "\n".join([
-            short_term_template.format(**{
-                "turn number": position + 1,
-                "user input": contents.get(user_input_key),
-                "chatbot response": contents.get(chatbot_response_key)
-            }) for position, contents in enumerate(recent_conversation)
-        ])
-
-        # Format template
         memory_template = outer_key["template"]
+
+        # Transcribe messages list
+        messages_transcription = self.transcribe_messages_list(
+            recent_conversation
+        )
+        
         return memory_template.format(**{
-            "short term memory": short_term_memory,
-            "long term memory": long_term_memory or "Not available."
+            "short term memory": messages_transcription,
+            "long term memory": long_term_memory or "Empty."
+        })
+    
+    def get_conversation_summary_prompt(
+            self,
+            summary: str
+    ) -> str:
+        """Get and format the prompt template summarizing the conversation."""
+        summary_template = self.load_and_format_context(
+            file_path=self.context_dir + self.system_prompts_filename,
+            key_name="conversation summary"
+        )
+        return summary_template.format(**{
+            "summary": summary
         })
