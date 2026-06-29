@@ -20,8 +20,7 @@ class ChatbotAgent(ChatbotContextHelper):
             available_models: dict = AppConfig.AVAILABLE_MODELS,
             provider_api_keys: dict = AppConfig.PROVIDER_API_KEYS,
             default_chatbot_config: dict = AppConfig.DEFAULT_CONFIG,
-            supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES,
-            fallback_compacting_msg_limit: int = 10
+            supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES
     ) -> None:
         """
         Initialize the ChatbotAgent.
@@ -41,10 +40,6 @@ class ChatbotAgent(ChatbotContextHelper):
                 A list of supported chatbot personalities.
                 Each personality string should have matching system prompt
                 templates in the directory path AppConfig.CHATBOT_CONTEXT_DIR
-            fallback_compacting_msg_limit: int
-                A fallback value for the number of conversation turns before memory
-                compacting is triggered, in case the value provided in the app config
-                is invalid.
 
         Attributes
         ----------
@@ -110,15 +105,10 @@ class ChatbotAgent(ChatbotContextHelper):
                 and max_completion_tokens > 0 else None
         )
 
-        # Set # messages in messages list before memory compacting
-        compacting_msg_limit = default_chatbot_config.get("compacting message limit")
-        if not isinstance(compacting_msg_limit, int) or compacting_msg_limit <= 0:
-            logger.error(
-                f"Invalid value for `compacting message limit`: {compacting_msg_limit}. "
-                f"Defaulting to {fallback_compacting_msg_limit}."
-            )
-            compacting_msg_limit = fallback_compacting_msg_limit
-        self.compacting_msg_limit = compacting_msg_limit
+        # Set total messages in messages list before memory compacting
+        self.compacting_msg_limit = int(
+            default_chatbot_config.get("compacting message limit", 30)
+        )
 
         # Init messages list
         self.messages: list[dict] = []
@@ -207,15 +197,22 @@ class ChatbotAgent(ChatbotContextHelper):
         self,
         messages: list[dict],
         tools: list[dict] | None = None
-    ) -> str | None:
+    ) -> list | None:
         """
         Call the LLM API and return the generated response.
 
-        Includes special considerations for certain OpenAI models for
-        which parameter names have changed.
+        Returns a list of messages containing the LLM's response.
+        This list will have len 1 for simple answers, but for answers
+        involving tool calls it will have a larger length.
 
-        Includes several debugging statements. Control whether these are
-        printed to stderr using the env var LOG_LEVEL.
+        Notes
+        -----
+
+            * Includes special considerations for certain OpenAI models for
+            which parameter names have changed.
+
+            * Includes several debugging statements. Control whether these are
+            printed to stderr using the env var LOG_LEVEL.
 
         Parameters
         ----------
@@ -227,9 +224,65 @@ class ChatbotAgent(ChatbotContextHelper):
 
         Returns
         -------
-            The generated response from the LLM as a string, or None if the
-            API call fails.
+            list
+                The generated list of messages from the LLM's response.
+
+        >>> response = ChatbotAgent().llm_api_call(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant."
+                    },
+                    {
+                        "role": "user",
+                        "content": "What's today's date?"
+                    }
+                ],
+                tools=[
+                    {
+                        'type': 'function',
+                        'function': {
+                            'name': 'get_current_date',
+                            'description': 'Get today's date in YYYY-MM-DD.',
+                            'parameters': {
+                                'type': 'object',
+                                'properties': {},
+                                'required': []
+                            }
+                        }
+                    }
+                ]
+        >>> print(response)
+            [
+                {
+                    'role': 'assistant',
+                    'content': None,
+                    'tool_calls': [
+                        {
+                            'id': 'function-call-67023',
+                            'type': 'function',
+                            'function': {
+                                'name': 'get_current_date',
+                                'arguments': '{}'
+                            }
+                        }
+                    ]
+                },
+                {
+                    'role': 'tool',
+                    'tool_call_id': 'function-call-67023',
+                    'content': '2026-06-29'
+                },
+                {
+                    'role': 'assistant',
+                    'content': "Hello there! Today's date is June 29, 2026. \n"
+                }
+            ]
+
         """
+        # ------------------------------------------------------------------
+        # Build API call params
+
         params = {
             "model": self.model_code,
             "messages": messages
@@ -249,28 +302,55 @@ class ChatbotAgent(ChatbotContextHelper):
         if isinstance(tools, list) and len(tools) > 0:
             params["tools"] = tools
 
-        # Return API response
+        # ------------------------------------------------------------------
+        # Make call, parse and return response
+
+        # Init return value
+        response_messages = []
+
+        # Make API call
+        logger.debug(f"Making LLM API Call - Params: {params}")
         response = self.client.chat.completions.create(**params)
-        response_content = (
-            response.choices[0].message.content
-            if response.choices else None
-        )
 
-        # Debug statements
-        logger.debug(f"LLM API Call - Params: {params}")
-        if response_content:
-            logger.debug(f"LLM Response: {response_content}")
-        if response.choices[0].finish_reason == "tool_calls":
-            logger.debug(
-                "Response finish reason: tool_calls."
-            )
-            logger.debug(
-                "Tool calls payload: "
-                f"{response.choices[0].message.tool_calls}"
-            )
-            self.llm_tool_call(response.choices[0].message.tool_calls)
+        # Parse choice
+        choice = response.choices[0]
+        logger.debug(f"Response choice: {choice}")
 
-        return response_content
+        # Get response depending on finish reason
+        if choice.finish_reason == "stop":  # regular text response
+            response_messages.append({
+                "role": "assistant",
+                "content": choice.message.content
+            })
+        elif choice.finish_reason == "tool_calls":  # tool calling required
+            # Append tool-calling request to messages
+            choice.message.content = None
+            response_messages.append(
+                self.serialize_chat_completions_response(
+                    choice.message
+                )
+            )
+            # Call tools and add results to messages
+            response_messages.extend(
+                self.llm_tool_call(choice.message.tool_calls)
+            )
+            # Call LLM again with tool results (no looping allowed for now)
+            messages.extend(response_messages)
+            params["messages"] = messages
+            logger.debug(
+                f"Making LLM API Call after tool calling - Params: {params}"
+            )
+            new_response = self.client.chat.completions.create(**params)
+            new_choice = new_response.choices[0]
+            logger.debug(
+                f"Response choice after tool call: {new_choice}"
+            )
+            response_messages.append({
+                "role": "assistant",
+                "content": new_choice.message.content
+            })
+
+        return response_messages
 
     @staticmethod
     def llm_tool_call(
@@ -278,7 +358,7 @@ class ChatbotAgent(ChatbotContextHelper):
             tool_registry: dict[str, callable] = tool_registry
     ) -> list:
         """
-        Execute a tool call and add the results to the messages list.
+        Execute a tool call and return its results.
 
         Compatible with OpenAI's chat completions endpoint.
 
@@ -364,16 +444,15 @@ class ChatbotAgent(ChatbotContextHelper):
             "content": user_query
         })
 
-        llm_response = self.llm_api_call(
+        new_messages = self.llm_api_call(
             messages=self.messages,
             tools=tools
         )
+        llm_response = None
 
-        # Update messages list
-        self.messages.append({
-            "role": "assistant",
-            "content": llm_response
-        })
+        # Update messages and save LLM's response
+        llm_response = new_messages[-1]["content"]
+        self.messages.extend(new_messages)
 
         # Evaluate compacting
         self._compact_messages()
@@ -396,7 +475,7 @@ class ChatbotAgent(ChatbotContextHelper):
                     2. The conversation summary so far
         """
         # Skip if memory update is not needed
-        if self.compacting_msg_limit % len(self.messages) != 0:
+        if len(self.messages) % self.compacting_msg_limit != 0:
             return
 
         # Check if long-term memory exists

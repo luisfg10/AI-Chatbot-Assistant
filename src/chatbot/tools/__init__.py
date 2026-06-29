@@ -6,7 +6,7 @@ from src.chatbot.tools.definitions import (
 
 # Build list of available tools
 tools = [
-    # get_current_date
+    get_current_date
 ]
 
 # Build registry and schema
