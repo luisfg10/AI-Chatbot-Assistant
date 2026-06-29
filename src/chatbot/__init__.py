@@ -13,8 +13,12 @@ Notes
 
     TODO: Switch to more advanced agent memory and compacting techniques.
 
-    TODO: Add a max number of tool executions before an answer in order to avoid
-    infinite loops.
+    TODO: Allow for tool-calling loops and add a max number of tool executions before
+    an answer is provided. Currently only one tool call turn is allowed before returning
+    a response.
+
+    TODO: Use proper type hints for OpenAI's return objects on functions and
+    class methods.
 """
 from .core.agent import ChatbotAgent
 

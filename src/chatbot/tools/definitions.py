@@ -10,5 +10,5 @@ from datetime import date
 
 
 def get_current_date() -> str:
-    """Get today's date."""
+    """Get today's date in YYYY-MM-DD."""
     return date.today().isoformat()

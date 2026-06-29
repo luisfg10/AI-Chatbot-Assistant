@@ -65,14 +65,20 @@ def build_tools(functions: list) -> tuple[dict, list]:
             if param.default is inspect.Parameter.empty:
                 required.append(param_name)
 
+        # Solve for function's description
+        if isinstance(doc, str):
+            description = doc
+        elif isinstance(doc, dict):
+            description = doc.get("short_description", "")
+        else:
+            doc = ""
+
+
         schemas.append({
             "type": "function",
             "function": {
                 "name": name,
-                "description": (
-                    doc.get("short_description", "")
-                    if isinstance(doc, dict) else ""
-                ),
+                "description": description,
                 "parameters": {
                     "type": "object",
                     "properties": properties,

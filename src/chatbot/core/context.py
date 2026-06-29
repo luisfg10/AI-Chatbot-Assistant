@@ -308,3 +308,75 @@ class ChatbotContextHelper(BaseContextHelper):
         return summary_template.format(**{
             "summary": summary
         })
+    
+    @staticmethod
+    def serialize_chat_completions_response(message: dict) -> dict:
+        """
+        Serialize an OpenAI's chat completions message into a Python dict.
+
+        Parameters
+        ----------
+            message: ChatCompletionMessage
+                An object from OpenAI's chat completions endpoint
+                indicating to call a tool.
+
+        Returns
+        -------
+            dict
+                A serialized dict to be appended to the messages list.
+
+        >>> example = ChatbotContextHelper().serialize_tool_calls_response(
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    annotations=None,
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id='function-call-6907',
+                            function=Function(
+                                arguments='{}',
+                                name='get_current_date'
+                            ),
+                            type='function'
+                        )
+                    ]
+                )
+            )
+        >>> print(example)
+            {
+                'role': 'assistant',
+                'content': None,
+                'tool_calls': [
+                    {
+                        'id': 'function-call-6907',
+                        'type': 'function',
+                        'function': {
+                            'name': 'get_current_date',
+                            'arguments': '{}'
+                        }
+                    }
+                ]
+            }
+
+        """
+        msg = {
+            "role": message.role,
+            "content": message.content
+        }
+        if message.tool_calls:
+            msg["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                }
+                for tc in message.tool_calls
+                ]
+            return msg
+
