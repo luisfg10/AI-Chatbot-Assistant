@@ -325,6 +325,8 @@ class ChatbotContextHelper(BaseContextHelper):
             dict
                 A serialized dict to be appended to the messages list.
 
+        Examples
+        --------
         >>> example = ChatbotContextHelper().serialize_tool_calls_response(
                 message=ChatCompletionMessage(
                     content=None,
@@ -346,20 +348,20 @@ class ChatbotContextHelper(BaseContextHelper):
                 )
             )
         >>> print(example)
-            {
-                'role': 'assistant',
-                'content': None,
-                'tool_calls': [
-                    {
-                        'id': 'function-call-6907',
-                        'type': 'function',
-                        'function': {
-                            'name': 'get_current_date',
-                            'arguments': '{}'
-                        }
+        {
+            'role': 'assistant',
+            'content': None,
+            'tool_calls': [
+                {
+                    'id': 'function-call-6907',
+                    'type': 'function',
+                    'function': {
+                        'name': 'get_current_date',
+                        'arguments': '{}'
                     }
-                ]
-            }
+                }
+            ]
+        }
 
         """
         msg = {

@@ -226,6 +226,8 @@ class ChatbotAgent(ChatbotContextHelper):
             list
                 The generated list of messages from the LLM's response.
 
+        Examples
+        --------
         >>> response = ChatbotAgent().llm_api_call(
                 messages=[
                     {
@@ -375,6 +377,8 @@ class ChatbotAgent(ChatbotContextHelper):
             list
                 A list with the results of each made tool call.
 
+        Examples
+        --------
         >>> tool_results = ChatbotAgent().llm_tool_call(
             [
                 ChatCompletionMessageFunctionToolCall(
@@ -388,14 +392,14 @@ class ChatbotAgent(ChatbotContextHelper):
             ]
             )
         >>> print(tool_results)
-            [
-                {
-                    'role': 'tool',
-                    'tool_call_id': 'function-call-6050399',
-                    'content': '2026-06-27'
-                },
-                ...
-            ]
+        [
+            {
+                'role': 'tool',
+                'tool_call_id': 'function-call-6050399',
+                'content': '2026-06-27'
+            },
+            ...
+        ]
         """
         results = []
         for tool_call in tool_calls:

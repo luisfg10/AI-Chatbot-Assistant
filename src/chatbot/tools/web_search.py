@@ -34,14 +34,14 @@ def web_search_tool_available(
             True if the provider's parameters are correctly set and
             the tool can be used, False otherwise.
 
-    >>> result = web_search_tool_available(
-            {
-                "url": "https://api.tavily.com/search",
-                "api key": "example-api-key"
-            }
-        )
+    Examples
+    --------
+    >>> result = web_search_tool_available({
+            "url": "https://api.tavily.com/search",
+            "api key": "example-api-key"
+        })
     >>> print(result)
-        True
+    True
     """
     if not isinstance(provider_config, dict) or not provider_config:
         return False
