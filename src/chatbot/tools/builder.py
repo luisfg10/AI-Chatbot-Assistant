@@ -1,29 +1,33 @@
 import inspect
 import types
+from collections.abc import Callable
+from typing import Any
 
 from docstring_parser import parse as parse_docstring
 
 
 class DocstringError(ValueError):
     """
+    Custom exception for raising docstring-related errors.
+
     Raised when a tool function's docstring is missing, incomplete, or
     doesn't match its actual signature.
-    
+
     Catching this separately from a plain ValueError makes it easy
     to distinguish bad documentation and fix them.
     """
 
 
 def _validate_docstring(
-        fn,
+        fn: Callable[[Any], Any],
         sig: inspect.Signature,
-        parsed_doc
+        parsed_doc: dict
 ) -> None:
     """
-    Check that a function's docstring is complete and consistent with its
-    actual signature, and raise DocstringError with a specific, actionable
-    message otherwise.
+    Validate a function's docstring is complete and well-formatted.
 
+    Checks that a function's docstring is consistent with its actual
+    signature, or raises DocstringError with a helpful message otherwise.
     This is necessary because `docstring_parser` fails *silently* on malformed
     numpydoc/Google/reST syntax.
     """
@@ -151,7 +155,6 @@ def build_tools(functions: list) -> tuple[dict, list]:
         description = parsed_doc.short_description or ""
         if parsed_doc.long_description:
             description += "\n" + parsed_doc.long_description
-
 
         schemas.append({
             "type": "function",

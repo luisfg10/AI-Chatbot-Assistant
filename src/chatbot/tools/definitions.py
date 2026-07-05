@@ -11,7 +11,7 @@ and return values unnecessarily.
 """
 from datetime import date
 
-from src.chatbot.tools.math_tool import calculate, CalculatorError
+from src.chatbot.tools.math_tool import CalculatorError, calculate
 
 
 def get_current_date() -> str:
@@ -22,15 +22,15 @@ def get_current_date() -> str:
 def evaluate_math_expression(expression: str) -> str:
     """
     Evaluate a math expression and return the result.
- 
+
     Supports +, -, *, /, ** and parentheses only. No other operators,
     functions, or variables are allowed.
- 
+
     Parameters
     ----------
     expression: str
         A math expression as a string, e.g. "3 * (8 + 1) / 2".
- 
+
     Returns
     -------
     str

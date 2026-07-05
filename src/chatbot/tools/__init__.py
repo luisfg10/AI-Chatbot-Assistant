@@ -2,7 +2,7 @@
 from src.chatbot.tools.builder import build_tools
 from src.chatbot.tools.definitions import (
     evaluate_math_expression,
-    get_current_date
+    get_current_date,
 )
 
 # Build list of available tools

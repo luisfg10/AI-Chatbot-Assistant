@@ -308,7 +308,7 @@ class ChatbotContextHelper(BaseContextHelper):
         return summary_template.format(**{
             "summary": summary
         })
-    
+
     @staticmethod
     def serialize_chat_completions_response(message: dict) -> dict:
         """
@@ -379,4 +379,3 @@ class ChatbotContextHelper(BaseContextHelper):
                 for tc in message.tool_calls
                 ]
             return msg
-

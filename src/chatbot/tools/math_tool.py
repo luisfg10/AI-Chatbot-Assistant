@@ -1,4 +1,4 @@
-"""
+r"""
 Safe arithmetic calculator tool for AI agents.
 
 Receives a string containing a math operation as input, and
@@ -46,9 +46,8 @@ Configuration Variables
 
 import ast
 import operator
-from typing import Union
 
-Number = Union[int, float]
+Number = int | float
 
 # ------------------------------------------------------------------
 # Config
@@ -66,9 +65,10 @@ MAX_BASE_FOR_LARGE_EXPONENT = 10_000
 
 class CalculatorError(Exception):
     """
-    Catch-all exception used for any problem with the expression:
-    invalid syntax, disallowed operations, or a result that breaks
-    one of the safety limits above.
+    Catch-all exception used for any problem with the expression.
+
+    Used for invalid syntax, disallowed operations, or a result that
+    breaks one of the safety limits above.
     """
 
 
@@ -93,10 +93,12 @@ _UNARYOPS = {
 # ------------------------------------------------------------------
 # Auxiliary Functions (not agent-facing)
 
+
 def _count_operators(node: ast.AST) -> int:
     """
-    Iteratively walk the parsed expression tree and count how many
-    operator nodes (BinOp and UnaryOp) it contains. Used to enforce
+    Walk a parsed expression tree and count its operator nodes.
+
+    Counts BinOp and UnaryOp nodes. Used to enforce
     MAX_OPERATOR_COUNT before we bother evaluating anything.
     """
     count = 0
@@ -113,7 +115,6 @@ def _eval_node(node: ast.AST) -> Number:
     If any node type that isn't explicitly handled below is encountered,
     a CalculatorError is raised instead of executing it.
     """
-
     # Case: the top-level wrapper Python adds when parsing in "eval" mode.
     # `ast.parse(expr, mode="eval")` always returns an `ast.Expression`
     # object as the root, with the actual content stored in `.body`.
@@ -166,11 +167,11 @@ def _eval_node(node: ast.AST) -> Number:
         try:
             return _BINOPS[op_type](left, right)
         except ZeroDivisionError:
-            raise CalculatorError("Division by zero")
+            raise CalculatorError("Division by zero") from None
         except OverflowError:
-            raise CalculatorError("Result too large to compute")
+            raise CalculatorError("Result too large to compute") from None
 
-    # Case: a unary operation, like `-5` 
+    # Case: a unary operation, like `-5`
     # An ast.UnaryOp object has `.op` (which sign) and `.operand`
     # (the value it applies to).
     if isinstance(node, ast.UnaryOp):
@@ -190,11 +191,7 @@ def _eval_node(node: ast.AST) -> Number:
 
 
 def _format_result(result: Number) -> Number:
-    """
-    Take a raw numeric result and if it's a float, round it to
-    MAX_DECIMAL_PLACES decimal places, and convert whole-number floats
-    (like 4.0) into plain ints (4) for a cleaner response.
-    """
+    """Enforce formatting rules for numeric results with decimals."""
     # Tidy up decimals.
     if isinstance(result, float):
         result = round(result, MAX_DECIMAL_PLACES)
@@ -237,7 +234,9 @@ def calculate(expression: str) -> Number:
     try:
         tree = ast.parse(expression, mode="eval")
     except SyntaxError as e:
-        raise CalculatorError(f"Invalid expression syntax: {e}")
+        raise CalculatorError(
+            f"Invalid expression syntax: {e}"
+        ) from e
 
     # --- Enforce the operator-count limit before evaluating anything.
     operator_count = _count_operators(tree)
