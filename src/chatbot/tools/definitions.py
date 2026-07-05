@@ -11,7 +11,7 @@ and return values unnecessarily.
 """
 from datetime import date
 
-from src.chatbot.tools.math_tool import CalculatorError, calculate
+from src.chatbot.tools.math import CalculatorError, calculate
 
 
 def get_current_date() -> str:
