@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
+## [v0.0.5] (WIP)  
+* Added basic agent tools: it can fetch today's date and perform basic arithmetic operations (add, substract, multiply, divide, exponentiate).  
+* Added a web search tool to the agent using Tavily's search endpoint. This tool is only available and visible to the agent if the environment variable `TAVILY_API_KEY` is provided on service startup.  
+
+
 ## [v0.0.4]  
 * Significant change in memory management: The messages list now has an appended message on each significant piece of information (base instructions, user message, chatbot response, tool call decision and execution). This is a necessary change before the introduction of actual tool calls, and aligns the project with commonly-used standards.     
 * Added context file caching in `src/chatbot/core/context.py` to avoid loading and parsing the YAML files from scratch on every context fetch.  
