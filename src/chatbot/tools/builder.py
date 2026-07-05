@@ -1,6 +1,8 @@
 import inspect
 import types
 
+from docstring_parser import parse as parse_docstring
+
 
 def build_tools(functions: list) -> tuple[dict, list]:
     """
@@ -42,14 +44,18 @@ def build_tools(functions: list) -> tuple[dict, list]:
         # Get metadata from the function
         name = fn.__name__
         sig = inspect.signature(fn)
-        doc = fn.__doc__ or ""
         registry[name] = fn
+
+        # Parse the docstring (numpy, Google, or reST style all work) into
+        # a structured object with separate fields for the summary, the
+        # extended description, and each parameter's description.
+        parsed_doc = parse_docstring(inspect.getdoc(fn) or "")
 
         # Map docstring param descriptions by name
         param_docs = {
-            p.arg_name: p.description
-            for p in doc.params
-        } if "params" in doc and isinstance(doc, dict) else {}
+            p.arg_name: p.description or ""
+            for p in parsed_doc.params
+        }
 
         properties = {}
         required = []
@@ -65,13 +71,11 @@ def build_tools(functions: list) -> tuple[dict, list]:
             if param.default is inspect.Parameter.empty:
                 required.append(param_name)
 
-        # Solve for function's description
-        if isinstance(doc, str):
-            description = doc
-        elif isinstance(doc, dict):
-            description = doc.get("short_description", "")
-        else:
-            doc = ""
+        # Build the function-level description from the docstring's
+        # short + long description only
+        description = parsed_doc.short_description or ""
+        if parsed_doc.long_description:
+            description += "\n" + parsed_doc.long_description
 
 
         schemas.append({
