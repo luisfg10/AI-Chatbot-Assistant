@@ -9,6 +9,11 @@
         "friendly",
         "professional"
     ],
+    "tools": {
+        "web search": {
+            "tavily": "https://api.tavily.com/search"
+        }
+    },
     "providers": {
         "anthropic": {
             "available models": [

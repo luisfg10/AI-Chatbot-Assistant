@@ -59,6 +59,16 @@ class AppConfig:
         for provider in AVAILABLE_MODELS.keys()
     }
 
+    # Tavily (web searcher)
+    try:
+        tavily_url = LLM_CONFIG["tools"]["web search"]["tavily"]
+    except KeyError:
+        tavily_url = None
+    TAVILY_CONFIG: dict = {
+        "url": tavily_url,
+        "api key": os.getenv("TAVILY_API_KEY")
+    }
+
     # Determine logging level
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper().strip()
     if LOG_LEVEL not in logger._core.levels:

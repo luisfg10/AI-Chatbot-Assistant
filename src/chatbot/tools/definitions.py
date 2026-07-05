@@ -11,7 +11,8 @@ and return values unnecessarily.
 """
 from datetime import date
 
-from src.chatbot.tools.math_tool import CalculatorError, calculate
+from src.chatbot.tools.math import CalculatorError, calculate
+from src.chatbot.tools.web_search import TavilyClient
 
 
 def get_current_date() -> str:
@@ -41,3 +42,23 @@ def evaluate_math_expression(expression: str) -> str:
         return str(result)
     except CalculatorError as e:
         return f"Error: {e}"
+
+
+def perform_web_search(query: str) -> str:
+    """
+    Perform a web search for a given query.
+
+    Parameters
+    ----------
+    query: str
+        Text to search. e.g., "Tesla stock price NYSE"
+
+    Returns
+    -------
+    str
+        The results from the web search.
+    """
+    return TavilyClient().search(
+        query=query,
+        simplify_response_for_agent=True
+    )
