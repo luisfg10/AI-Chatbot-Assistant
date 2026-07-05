@@ -198,7 +198,7 @@ class ChatbotAgent(ChatbotContextHelper):
         messages: list[dict],
         tools: list[dict] | None = None
     ) -> list | None:
-        """
+        r"""
         Call the LLM API and return the generated response.
 
         Returns a list of messages containing the LLM's response.
@@ -207,7 +207,6 @@ class ChatbotAgent(ChatbotContextHelper):
 
         Notes
         -----
-
             * Includes special considerations for certain OpenAI models for
             which parameter names have changed.
 

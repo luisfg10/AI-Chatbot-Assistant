@@ -29,6 +29,16 @@ Notes
     TODO: Deep Research capability using an ideator-reviewer-critic agent architecture.
     To do this, the agent must at least have a web search tool available, and optionally
     be able to spin up several sub-agents in parallel to reduce latency.
+
+    TODO: Add a means for user feedback, which can also serve for LLM evaluation:
+    on each message, users should be able to rate the quality of the message
+    (thumbs up or thumbs down). This feedback should be saved and used to improve the
+    agent.
+
+    TODO: Allow users to add/remove models from the models list manually, and
+    persist their choices across sessions.
+
+    TODO: On each message, show users whether the agent used any tools, and which.
 """
 from src.backend import app
 
