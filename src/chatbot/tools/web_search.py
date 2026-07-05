@@ -5,15 +5,16 @@ This module is built with external provider flexibility in
 mind so they can easily be switched if necessary.
 """
 import json
+from typing import Any
 
 import requests
 from loguru import logger
 
 from config import AppConfig
 
-
 # ------------------------------------------------------------------
 # General- purpose utils
+
 
 def web_search_tool_available(
         provider_config: dict = AppConfig.TAVILY_CONFIG
@@ -63,14 +64,16 @@ def web_search_tool_available(
 class TavilyClient:
     """Class used for handling Tavily searches."""
 
-    def __init__(self, config: dict = AppConfig.TAVILY_CONFIG):
+    def __init__(
+            self,
+            config: dict = AppConfig.TAVILY_CONFIG
+    ) -> None:
         """
         Init the TavilyClient class instance based on env vars.
 
         Currently assumes that only the web search endpoint is being used,
         adapt this method if using other Tavily functionalities
         (e.g., extract, crawl, map)
-        
         """
         self.url = config["url"]
         self.api_key = config["api key"]
@@ -88,7 +91,7 @@ class TavilyClient:
             query: str,
             include_answer: bool = True,
             simplify_response_for_agent: bool = False,
-            **kwargs
+            **kwargs: Any
     ) -> dict | str:
         """
         Perform a web search using Tavily.
@@ -111,7 +114,7 @@ class TavilyClient:
                 results for the query.
                 It's recommended to set this value to True if using within
                 an agent tool, in order to return a simple, short answer.
-    
+
             simplify_response_for_agent: bool = False
                 If True, returns a string with the search results.
                 Otherwise returns a dict, which is the original format of
@@ -204,7 +207,7 @@ class TavilyClient:
                 f"Content: {response.content}"
             )
             if simplify_response_for_agent:
-                return(
+                return (
                     "Error: Web search tool returned status "
                     f"{response.status_code} and is not available."
                 )

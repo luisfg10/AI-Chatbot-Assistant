@@ -3,7 +3,7 @@ from src.chatbot.tools.builder import build_tools
 from src.chatbot.tools.definitions import (
     evaluate_math_expression,
     get_current_date,
-    perform_web_search
+    perform_web_search,
 )
 from src.chatbot.tools.web_search import web_search_tool_available
 
