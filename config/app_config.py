@@ -15,11 +15,13 @@ class AppConfig:
 
     Notes
     -----
-        - Use llm_config.json to define available LLM providers, their models and chat requests
-        settings. Base URLs should be compatible with OpenAI's Python SDK.
+        - Use llm_config.json to define available LLM providers, their
+        models and chat request settings.
+        - Base URLs should be compatible with OpenAI's Python SDK.
         - Use the .env file to set the API keys for LLM providers.
-        - Available models for the UI are resolved as the set of available models for which the provider
-        has a set API key defined in the .env file. Doesn't yet support self-hosted models.
+        - Available models for the UI are resolved as the set of available
+        models for which the provider has a set API key defined in the .env file.
+        - No support for self-hosted models yet.
     """
 
     # Default Directories (should end with "/")
@@ -37,7 +39,9 @@ class AppConfig:
             f"LLM config file not found at '{LLM_CONFIG_PATH}'"
         )
     DEFAULT_CONFIG: dict = LLM_CONFIG.get("default config", {})
-    SUPPORTED_CHATBOT_PERSONALITIES: list = LLM_CONFIG.get("supported chatbot personalities", [])
+    SUPPORTED_CHATBOT_PERSONALITIES: list = LLM_CONFIG.get(
+        "supported chatbot personalities", []
+    )
 
     # ------------------------------------------------------------------
     # Environment Variables
@@ -71,7 +75,7 @@ class AppConfig:
 
     # Determine logging level
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper().strip()
-    if LOG_LEVEL not in logger._core.levels:
+    if LOG_LEVEL not in logger._core.levels:  # Check invariant
         raise ValueError(
             f"Invalid LOG_LEVEL provided: '{LOG_LEVEL}'. "
             f"Valid options: {list(logger._core.levels.keys())}"
