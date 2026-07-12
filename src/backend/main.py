@@ -118,7 +118,7 @@ async def get_personalities(
             and the default personality.
     """
     return AvailablePersonalitiesResponse(
-        personalities=list(agent.supported_chatbot_personalities),
+        personalities=list(agent.supported_personalities),
         default_personality=agent.default_personality
     )
 

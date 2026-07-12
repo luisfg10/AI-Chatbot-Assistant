@@ -1,9 +1,10 @@
 {
     "default config": {
-        "model": "gemini-2.5-flash",
+        "model": "gpt-5-mini",
         "personality": "friendly",
         "max completion tokens": 2000,
-        "compacting message limit": 30
+        "compacting message limit": 20,
+        "max recursive tool calls": 5
     },
     "supported chatbot personalities": [
         "friendly",
