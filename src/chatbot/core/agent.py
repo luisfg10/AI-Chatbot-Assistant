@@ -46,7 +46,7 @@ class ChatCompletionsBaseAgent:
             max_recusrive_tool_calls: int | None = None
                 Max allowed number of tool calls for the Agent before
                 forcing a response. Optional but recommended for preventing
-                infinite loops, which are unlikely but possible.
+                infinite tool call loops, which are unlikely but possible.
             max_completion_tokens: int | None = None
                 Optional parameter for specifying max tokens.
         """
@@ -56,11 +56,15 @@ class ChatCompletionsBaseAgent:
             and max_completion_tokens > 0 else None
         )
 
-        # Resolve max recursive tool calls
-        self.max_recursive_tool_calls = (
-            max_recursive_tool_calls if isinstance(max_recursive_tool_calls, int)
-            and max_recursive_tool_calls > 0 else None
-        )
+        # Init recursive tool calls attribute
+        self.recursive_tool_calls = {
+            "current": 0,
+            "max": (
+                max_recursive_tool_calls
+                if isinstance(max_recursive_tool_calls, int)
+                and max_recursive_tool_calls > 0 else 50
+            )
+        }
 
         # Save models: assumes it has the correct structure
         self.models = models
@@ -105,14 +109,25 @@ class ChatCompletionsBaseAgent:
     def llm_api_call(
         self,
         messages: list[dict],
-        tools: list[dict] | None = None
+        tools: list[dict] | None = None,
+        recursive: bool = False,
+        existing_response_messages: list[dict] | None = None,
+        tool_limit_reached_prompt: str | None = None
     ) -> list | None:
         r"""
         Call the LLM API and return the generated response.
 
         Returns a list of messages containing the LLM's response.
-        This list will have len 1 for simple answers, but for answers
-        involving tool calls it will have a larger length.
+        This list will have len 1 for simple answers, but for multi-step
+        answers involving tool calls it'll have a larger length.
+
+        For multi-step answers that require tool calls, calls itself
+        recursively while updating the messages list and while monitoring
+        the number of recursive tool calls being done without answering the
+        user. In order to enforce a max limit of recursive tool calls, whenever
+        the limit is reached the next LLM call eliminates the possibility of
+        tool calling (tools=None) and also adds a context message to the LLM
+        explaining the must answer the user in their next message.
 
         Notes
         -----
@@ -129,6 +144,18 @@ class ChatCompletionsBaseAgent:
             tools: Optional[list[dict]]
                 An optional list of tools to provide to the LLM for enhanced
                 capabilities.
+            recursive: bool
+                Boolean flag indicating whether the method was called from itself.
+                This is used internally when tool calling to select the correct
+                list of messages to build on the API request.
+            existing_response_messages: list[dict] | None
+                In case it is a recursive call, the current list of messages that
+                will make part of the final return value.
+            tool_limit_reached_prompt: str | None = None
+                Message to send to the LLM in case it exceeds the max recursive
+                tool calls allowed for a single interaction.
+                e.g.,
+                "You have exceeded your tool calls, please respond to the user now."
 
         Returns
         -------
@@ -216,10 +243,17 @@ class ChatCompletionsBaseAgent:
         # Make call, parse and return response
 
         # Init return value
-        response_messages = []
+        response_messages = existing_response_messages if recursive else []
+
+        # Log API call values
+        logger.debug(f"LLM API Call - Messages: {messages}")
+        other_params = {
+            k: v for k, v in params.items()
+            if k != "messages"
+        }
+        logger.trace(f"LLM API Call - Other Params: {other_params}")
 
         # Make API call
-        logger.debug(f"Making LLM API Call - Params: {params}")
         response = self.client.chat.completions.create(**params)
 
         # Parse choice
@@ -228,39 +262,53 @@ class ChatCompletionsBaseAgent:
 
         # Get response depending on finish reason
         if choice.finish_reason == "stop":  # regular text response
+            self.recursive_tool_calls["current"] = 0
             response_messages.append({
                 "role": "assistant",
                 "content": choice.message.content
             })
-        elif choice.finish_reason == "tool_calls":  # tool calling required
-            # Append tool-calling request to messages
-            choice.message.content = None
-            response_messages.append(
-                self.serialize_chat_completions_response(
-                    choice.message
-                )
-            )
-            # Call tools and add results to messages
-            response_messages.extend(
-                self.llm_tool_call(choice.message.tool_calls)
-            )
-            # Call LLM again with tool results (no looping allowed for now)
-            messages.extend(response_messages)
-            params["messages"] = messages
-            logger.debug(
-                f"Making LLM API Call after tool calling - Params: {params}"
-            )
-            new_response = self.client.chat.completions.create(**params)
-            new_choice = new_response.choices[0]
-            logger.debug(
-                f"Response choice after tool call: {new_choice}"
-            )
-            response_messages.append({
-                "role": "assistant",
-                "content": new_choice.message.content
-            })
+            return response_messages
 
-        return response_messages
+        elif choice.finish_reason == "tool_calls":  # tool calling required
+            self.recursive_tool_calls["current"] += 1
+            choice.message.content = None
+
+            new_messages = [self.serialize_chat_completions_response(choice.message)]
+            new_messages.extend(self.llm_tool_call(choice.message.tool_calls))
+
+            response_messages.extend(new_messages)
+
+            # Build the next request's message list without mutating original list
+            next_messages = messages + new_messages
+
+            if self.recursive_tool_calls["current"] <= self.recursive_tool_calls["max"]:
+                return self.llm_api_call(
+                    messages=next_messages,
+                    tools=tools,
+                    recursive=True,
+                    existing_response_messages=response_messages,
+                    tool_limit_reached_prompt=tool_limit_reached_prompt
+                )
+            else:  # tool calling exceeded: demand response next and take away tools
+                if (
+                    not isinstance(tool_limit_reached_prompt, str)
+                    or len(tool_limit_reached_prompt) == 0
+                ):
+                    raise ValueError(
+                        "`tool_limit_reached_prompt` is not provided, "
+                        "cannot proceed. Please double-check implementation."
+                    )
+                next_messages = next_messages + [{
+                    "role": "system",
+                    "content": tool_limit_reached_prompt
+                }]
+                return self.llm_api_call(
+                    messages=next_messages,
+                    tools=None,
+                    recursive=True,
+                    existing_response_messages=response_messages,
+                    tool_limit_reached_prompt=tool_limit_reached_prompt
+                )
 
     @staticmethod
     def llm_tool_call(
@@ -328,6 +376,78 @@ class ChatCompletionsBaseAgent:
             })
 
         return results
+
+    @staticmethod
+    def serialize_chat_completions_response(message: dict) -> dict:
+        """
+        Serialize an OpenAI's chat completions message into a Python dict.
+
+        Parameters
+        ----------
+            message: ChatCompletionMessage
+                An object from OpenAI's chat completions endpoint
+                indicating to call a tool.
+
+        Returns
+        -------
+            dict
+                A serialized dict to be appended to the messages list.
+
+        Examples
+        --------
+        >>> example = ChatbotContextHelper().serialize_tool_calls_response(
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    annotations=None,
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id='function-call-6907',
+                            function=Function(
+                                arguments='{}',
+                                name='get_current_date'
+                            ),
+                            type='function'
+                        )
+                    ]
+                )
+            )
+        >>> print(example)
+        {
+            'role': 'assistant',
+            'content': None,
+            'tool_calls': [
+                {
+                    'id': 'function-call-6907',
+                    'type': 'function',
+                    'function': {
+                        'name': 'get_current_date',
+                        'arguments': '{}'
+                    }
+                }
+            ]
+        }
+        """
+        msg = {
+            "role": message.role,
+            "content": message.content
+        }
+        if message.tool_calls:
+            msg["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                }
+                for tc in message.tool_calls
+                ]
+            return msg
 
 
 class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
@@ -407,6 +527,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             self,
             models=models,
             default_model=default_config.get("model"),
+            max_recursive_tool_calls=default_config.get("max recursive tool calls"),
             max_completion_tokens=default_config.get("max completion tokens")
         )
         ChatbotContextHelper.__init__(self)
@@ -486,6 +607,10 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
                 The generated response from the chatbot as a string,
                 or None if the API call fails.
         """
+        # Check that recursive tool call limit prompt is saved to self
+        if not hasattr(self, "rec_tool_call_lim_prompt"):
+            self.rec_tool_call_lim_prompt = self.get_rec_tool_lim_prompt()
+
         # Append user query to messages
         self.messages.append({
             "role": "user",
@@ -495,7 +620,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         new_messages = ChatCompletionsBaseAgent.llm_api_call(
             self,
             messages=self.messages,
-            tools=tools
+            tools=tools,
+            tool_limit_reached_prompt=self.rec_tool_call_lim_prompt
         )
         llm_response = None
 
@@ -524,8 +650,13 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
                     2. The conversation summary so far
         """
         # Skip if memory update is not needed
-        if len(self.messages) % self.compacting_msg_limit != 0:
+        if len(self.messages) <= self.compacting_msg_limit:
             return
+
+        logger.debug(
+            f"Messages list length is at limit of {len(self.messages)}. "
+            "Compacting..."
+        )
 
         # Check if long-term memory exists
         long_term_memory = (

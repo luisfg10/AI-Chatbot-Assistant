@@ -3,6 +3,9 @@
 conversation summary: >
   Here's a summary of the conversation so far: {summary}
 
+recursive tool limit reached: >
+  You have exhausted your allowed tool calls. Please respond to the user now with the information you have, or request more information to continue.
+
 # ------------------------------------------------------------------
 # Chatbot Personalities (expects "{personality} chatbot" format)
 

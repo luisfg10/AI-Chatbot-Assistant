@@ -2,8 +2,9 @@
 All notable changes to this project will be documented in this file.  
 
 ## [v0.0.5] (WIP)  
-* Added basic agent tools: it can fetch today's date and perform basic arithmetic operations (add, substract, multiply, divide, exponentiate).  
-* Added a web search tool to the agent using Tavily's search endpoint. This tool is only available and visible to the agent if the environment variable `TAVILY_API_KEY` is provided on service startup.  
+* Added basic agent tools: the agent can now fetch today's date and perform basic arithmetic operations (add, substract, multiply, divide, exponentiate).  
+* Added a web search tool to the agent using Tavily's search endpoint. This tool is only available to the agent if the environment variable `TAVILY_API_KEY` is provided on service startup.  
+* Tool use is recursive inside the agent and with a limit to the maximum number of tool calls allowed in a single message interaction, controllable in `llm_config.json`. If agent exceeds this limit, on the next message it's shown a message asking them to answer with the information they have and without further tool-calling.  
 
 
 ## [v0.0.4]  
