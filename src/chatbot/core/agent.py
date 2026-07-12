@@ -342,8 +342,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             self,
             available_models: dict = AppConfig.AVAILABLE_MODELS,
             provider_api_keys: dict = AppConfig.PROVIDER_API_KEYS,
-            default_chatbot_config: dict = AppConfig.DEFAULT_CONFIG,
-            supported_chatbot_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES
+            default_config: dict = AppConfig.DEFAULT_CONFIG,
+            supported_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES
     ) -> None:
         """
         Initialize the ChatbotAssistant.
@@ -356,33 +356,33 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             provider_api_keys: dict
                 A dictionary mapping LLM providers to their corresponding API keys,
                 as defined in the app config.
-            default_chatbot_config: dict
+            default_config: dict
                 A dictionary containing the default configuration for the chatbot,
                 including default LLM provider, model code, and other settings.
-            supported_chatbot_personalities: list
+            supported_personalities: list
                 A list of supported chatbot personalities.
                 Each personality string should have matching system prompt
                 templates in the directory path AppConfig.CHATBOT_CONTEXT_DIR
         """
         # Create an object for storing personality-specific API call parameters
-        self.supported_chatbot_personalities = supported_chatbot_personalities
+        self.supported_personalities = supported_personalities
         if (
-            not isinstance(self.supported_chatbot_personalities, (list, tuple))
-            or not self.supported_chatbot_personalities
+            not isinstance(self.supported_personalities, (list, tuple))
+            or not self.supported_personalities
         ):  # Check invariant: supported personalities must be list or tuple
             raise ValueError(
                 "Didn't receive a valid value for "
-                "`supported_chatbot_personalities`."
+                "`supported_personalities`."
             )
         # Set default personality to show on Chatbot startup
-        default_personality = default_chatbot_config.get("personality")
-        if default_personality not in self.supported_chatbot_personalities:
-            default_personality = self.supported_chatbot_personalities[0]
+        default_personality = default_config.get("personality")
+        if default_personality not in self.supported_personalities:
+            default_personality = self.supported_personalities[0]
         self.default_personality = default_personality
 
         # Set total messages in messages list before memory compacting
         self.compacting_msg_limit = int(
-            default_chatbot_config.get("compacting message limit", 30)
+            default_config.get("compacting message limit", 30)
         )
 
         # Check invariant: at least one model loaded from app config
@@ -406,8 +406,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         ChatCompletionsBaseAgent.__init__(
             self,
             models=models,
-            default_model=default_chatbot_config.get("model"),
-            max_completion_tokens=default_chatbot_config.get("max completion tokens")
+            default_model=default_config.get("model"),
+            max_completion_tokens=default_config.get("max completion tokens")
         )
         ChatbotContextHelper.__init__(self)
 
@@ -443,7 +443,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
                 In the case of the instructions for compacting, saves the instructions
                 to use to the self.
         """
-        if personality not in self.supported_chatbot_personalities:
+        if personality not in self.supported_personalities:
             personality = self.default_personality
 
         # Chatbot instructions
