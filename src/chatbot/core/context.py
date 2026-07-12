@@ -226,7 +226,7 @@ class ChatbotContextHelper(BaseContextHelper):
         """
         Convert a list of chatbot-user messages into a readable transcript.
 
-        This method is used as part of memory compacting for the ChatbotAgent,
+        This method is used as part of memory compacting for the ChatbotAssistant,
         and its output is to be passed on as a user message in the messages list.
         """
         transcript = ""

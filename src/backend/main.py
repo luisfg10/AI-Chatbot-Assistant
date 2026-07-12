@@ -17,10 +17,10 @@ from src.backend.schemas import (
     ChatRequest,
     ChatResponse,
 )
-from src.chatbot import ChatbotAgent
+from src.chatbot import ChatbotAssistant
 
 app = FastAPI()
-agent_store: dict[str, ChatbotAgent] = {}
+agent_store: dict[str, ChatbotAssistant] = {}
 
 # ------------------------------------------------------------------
 # Homepage
@@ -36,16 +36,16 @@ async def homepage(session_id: str = Cookie(default=None)) -> FileResponse:
     if not session_id:
         session_id = str(uuid4())
         response.set_cookie(key="session_id", value=session_id, path="/", httponly=True)
-        agent_store[session_id] = ChatbotAgent()
+        agent_store[session_id] = ChatbotAssistant()
     elif session_id not in agent_store:
-        agent_store[session_id] = ChatbotAgent()
+        agent_store[session_id] = ChatbotAssistant()
     return response
 
 # ------------------------------------------------------------------
 # Chat and Config Endpoints
 
 
-def get_agent(session_id: str = Cookie(default=None)) -> ChatbotAgent:
+def get_agent(session_id: str = Cookie(default=None)) -> ChatbotAssistant:
     """
     Retrieve the chatbot agent instance for the current session.
 
@@ -59,7 +59,7 @@ def get_agent(session_id: str = Cookie(default=None)) -> ChatbotAgent:
 
     Returns
     -------
-        ChatbotAgent
+        ChatbotAssistant
             The chatbot agent instance associated with the session.
     """
     # Check invariant: Session must be started
@@ -77,14 +77,14 @@ router = APIRouter(
 
 @router.get("/models")
 async def get_models(
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> AvailableModelsResponse:
     """
     Get the list of available LLMs supported by the chatbot agent.
 
     Parameters
     ----------
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns
@@ -101,14 +101,14 @@ async def get_models(
 
 @router.get("/personalities")
 async def get_personalities(
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> AvailablePersonalitiesResponse:
     """
     Get the list of supported chatbot personalities.
 
     Parameters
     ----------
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns
@@ -125,14 +125,14 @@ async def get_personalities(
 
 @router.post("/reset")
 async def reset_memory(
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
     Reset the chatbot agent's memory.
 
     Parameters
     ----------
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns
@@ -147,7 +147,7 @@ async def reset_memory(
 @router.post("/chat")
 async def chat(
     chat_request: ChatRequest,
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> ChatResponse:
     """
     Receive a user message and return the chatbot's response.
@@ -156,7 +156,7 @@ async def chat(
     ----------
         chat_request : ChatRequest
             The request body containing the user's message.
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns
@@ -171,7 +171,7 @@ async def chat(
 @router.post("/config/model")
 async def set_model(
     body: dict,
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
     Update the LLM to be called by the chatbot agent.
@@ -183,7 +183,7 @@ async def set_model(
     ----------
         body : dict
             The request body containing the new model name.
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns
@@ -197,7 +197,7 @@ async def set_model(
 @router.post("/config/personality")
 async def set_personality(
     body: dict,
-    agent: ChatbotAgent = Depends(get_agent)
+    agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
     Update the personality traits of the chatbot agent.
@@ -209,7 +209,7 @@ async def set_personality(
     ----------
         body : dict
             The request body containing the new personality traits.
-        agent : ChatbotAgent
+        agent : ChatbotAssistant
             The chatbot agent instance for the current session.
 
     Returns

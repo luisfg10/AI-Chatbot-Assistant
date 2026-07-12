@@ -20,6 +20,6 @@ Notes
     TODO: Use proper type hints for OpenAI's return objects on functions and
     class methods.
 """
-from .core.agent import ChatbotAgent
+from .core.agent import ChatbotAssistant
 
-__all__ = ["ChatbotAgent"]
+__all__ = ["ChatbotAssistant"]
