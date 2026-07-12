@@ -67,7 +67,7 @@ class BaseContextHelper:
         if self.file_caching and file_path in self.file_store:
             return self.file_store[file_path]
 
-        # Check filepath exists
+        # Invariant: Filepath must exist
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
             raise FileNotFoundError(f"YAML file not found: {file_path}")
@@ -131,7 +131,9 @@ class BaseContextHelper:
             )
 
         if key_name not in file:
-            raise KeyError(f"Key '{key_name}' not found in YAML file {file_path}")
+            raise KeyError(
+                f"Key '{key_name}' not found in YAML file {file_path}"
+            )
 
         value = file[key_name]
         if kwargs and isinstance(value, str):
@@ -168,6 +170,7 @@ class ChatbotContextHelper(BaseContextHelper):
                 Whether to save to memory already-loaded files to avoid
                 having to load them again on new calls.
         """
+        # Invariant check
         if not isinstance(context_dir, str):
             raise ValueError("'context_dir' must be a string.")
 

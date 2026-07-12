@@ -71,7 +71,7 @@ class AppConfig:
 
     # Determine logging level
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper().strip()
-    if LOG_LEVEL not in logger._core.levels:
+    if LOG_LEVEL not in logger._core.levels:  # Check invariant
         raise ValueError(
             f"Invalid LOG_LEVEL provided: '{LOG_LEVEL}'. "
             f"Valid options: {list(logger._core.levels.keys())}"

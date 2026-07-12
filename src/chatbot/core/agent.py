@@ -57,7 +57,7 @@ class ChatbotAgent(ChatbotContextHelper):
             supported_chatbot_personalities: list
                 A list of supported chatbot personalities, as defined in the app config.
         """
-        # Raise if no models are available based on the app config
+        # Check invariant: at least one model loaded from app config
         if not isinstance(available_models, dict) or len(available_models) == 0:
             raise ValueError(
                 f"Value for `available_models` is invalid: {available_models}"
@@ -80,7 +80,7 @@ class ChatbotAgent(ChatbotContextHelper):
         if (
             not isinstance(self.supported_chatbot_personalities, (list, tuple))
             or not self.supported_chatbot_personalities
-        ):
+        ):  # Check invariant: supported personalities must be list or tuple
             raise ValueError(
                 "Didn't receive a valid value for "
                 "`supported_chatbot_personalities`."
@@ -408,7 +408,7 @@ class ChatbotAgent(ChatbotContextHelper):
             args = json.loads(tool_call.function.arguments)
 
             function_to_run = tool_registry.get(tool_name)
-            if function_to_run is None:
+            if function_to_run is None:  # Check invariant: known tools only
                 raise ValueError(f"Unknown tool: {function_to_run}")
 
             result = function_to_run(**args)

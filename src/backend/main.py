@@ -62,6 +62,7 @@ def get_agent(session_id: str = Cookie(default=None)) -> ChatbotAgent:
         ChatbotAgent
             The chatbot agent instance associated with the session.
     """
+    # Check invariant: Session must be started
     if not session_id or session_id not in agent_store:
         raise HTTPException(status_code=401, detail="No valid session")
     return agent_store[session_id]

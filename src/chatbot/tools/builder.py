@@ -33,14 +33,14 @@ def _validate_docstring(
     """
     name = fn.__name__
 
-    # Check 1: the function must have a short summary line.
+    # Invariant 1: the function must have a short summary line.
     if not parsed_doc.short_description:
         raise DocstringError(
             f"Function '{name}' has no docstring summary. Add a one-line "
             f"description of what the tool does."
         )
 
-    # Check 2: every parameter in the function's real signature must have a
+    # Invariant 2: every parameter in the function's real signature must have a
     # matching, non-empty entry in the docstring's Parameters section.
     sig_param_names = set(sig.parameters.keys())
     doc_param_names = {p.arg_name for p in parsed_doc.params}
@@ -53,7 +53,7 @@ def _validate_docstring(
             "Make sure to document using consistent numpy-style formatting."
         )
 
-    # Check 3: A documented parameter that doesn't
+    # Invariant 3: A documented parameter that doesn't
     # actually exist in the function signature
     extra_in_doc = doc_param_names - sig_param_names
     if extra_in_doc:
@@ -63,7 +63,7 @@ def _validate_docstring(
             "stale documentation."
         )
 
-    # Check 4: every documented parameter must have actual description
+    # Invariant 4: every documented parameter must have actual description
     # text, not just a name with an empty/missing body.
     empty_descriptions = [
         p.arg_name for p in parsed_doc.params
@@ -109,7 +109,7 @@ def build_tools(functions: list) -> tuple[dict, list]:
     }
 
     for fn in functions:
-        # Sanity check: object must be a function
+        # Invariant: object must be a function
         if not isinstance(fn, types.FunctionType):
             raise ValueError(f"Object '{fn}' must be a function.")
 
