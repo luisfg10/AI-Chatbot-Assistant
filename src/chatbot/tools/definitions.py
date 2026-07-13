@@ -24,8 +24,8 @@ def evaluate_math_expression(expression: str) -> str:
     """
     Evaluate a math expression and return the result.
 
-    Supports +, -, *, /, ** and parentheses only. No other operators,
-    functions, or variables are allowed.
+    Supports int, float, +, -, *, /, ** and parentheses only.
+    No other operators, functions, or variables are allowed.
 
     Parameters
     ----------
@@ -46,12 +46,12 @@ def evaluate_math_expression(expression: str) -> str:
 
 def perform_web_search(query: str) -> str:
     """
-    Perform a web search for a given query.
+    Perform a web search for grounding a user's query.
 
     Parameters
     ----------
     query: str
-        Text to search. e.g., "Tesla stock price NYSE"
+        Text to search. e.g., "Tesla stock price NYSE today"
 
     Returns
     -------

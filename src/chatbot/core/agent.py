@@ -117,8 +117,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             None
                 Updates the first message in the messages list containing the
                 chatbot's isntructions.
-                In the case of the instructions for compacting, saves the instructions
-                to use to the self.
+                In the case of the instructions for compacting, saves the
+                instructions to use to the self.
         """
         if personality not in self.supported_personalities:
             personality = self.default_personality

@@ -279,7 +279,7 @@ class ChatCompletionsBaseAgent:
             # Build the next request's message list without mutating original list
             next_messages = messages + new_messages
 
-            if self.recursive_tool_calls["current"] <= self.recursive_tool_calls["max"]:
+            if self.recursive_tool_calls["current"] < self.recursive_tool_calls["max"]:
                 return self.llm_api_call(
                     messages=next_messages,
                     tools=tools,
