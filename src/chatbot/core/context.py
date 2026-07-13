@@ -194,9 +194,9 @@ class ChatbotContextHelper(BaseContextHelper):
     ) -> str:
         """Get the chatbot's instructions based on its personality."""
         outer_key = self.load_and_format_context(
-                file_path=self.context_dir + self.system_prompts_filename,
-                key_name="chatbot"
-            )
+            file_path=self.context_dir + self.system_prompts_filename,
+            key_name="personalities"
+        )
         return outer_key[personality]
 
     def get_compacting_instructions(
