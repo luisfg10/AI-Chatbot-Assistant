@@ -6,8 +6,8 @@ is mandatory so the tool schema builder parses the docstring
 correctly, otherwise it will raise a ValueError.
 
 Keep each function's docstring informative and concise to improve
-the chances it's called correctly by the LLM. Avoid defining parameters
-and return values unnecessarily.
+the chances it's called correctly by the LLM. Avoid overly describing
+parameters and return values without need.
 """
 from datetime import date
 

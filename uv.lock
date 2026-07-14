@@ -4,7 +4,7 @@ requires-python = ">=3.13.0"
 
 [[package]]
 name = "ai-chatbot-assistant"
-version = "0.0.1"
+version = "0.0.5"
 source = { virtual = "." }
 dependencies = [
     { name = "docstring-parser" },

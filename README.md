@@ -18,40 +18,62 @@ The project was structured in a modular way and each core functionality of the c
 
 ```
 .
-├── config/                # Configuration files
-│   ├── __init__.py
-│   ├── app_config.py      # Application configuration
-│   └── llm_config.json    # Default LLM model configurations
-├── main.py                # Application entry point
-├── pyproject.toml         # Project dependencies and metadata
-├── README.md              # This file
-├── Dockerfile             # Docker configuration
+├── .dockerignore
+├── .github/               # GitHub-specific files and workflows
+├── .gitignore
+├── .python-version
+├── CHANGELOG.md           # Project changelog
+├── Dockerfile             # Production Docker configuration
 ├── Dockerfile.dev         # Development Docker configuration
 ├── LICENSE                # License information
-├── CHANGELOG.md           # Project changelog
-├── tests/                 # Test files (pending implementation)
-│   └── __init__.py
+├── README.md              # Project documentation
+├── main.py                # Application entry point
+├── pyproject.toml         # Project metadata and dependencies
 ├── uv.lock                # Dependency lock file
-└── src/                   # Application source code
-    ├── __init__.py
-    ├── backend/           # Backend app entry points and API logic
-    │   ├── __init__.py
-    │   ├── main.py
-    │   └── schemas.py
-    ├── chatbot/           # Core chatbot code
-    │   ├── __init__.py
-    │   ├── context/       # Prompt templates
-    │   │   ├── system.yaml
-    │   │   └── user.yaml
-    │   └── core/          # Core chatbot logic
-    │       ├── agent.py
-    │       └── context.py
-    └── frontend/         # UI components (static files)
-        └── static/
-            ├── app.js
-            ├── index.html
-            └── style.css
+├── config/                # Runtime configuration files
+│   ├── __init__.py
+│   ├── app_config.py      # Application configuration logic
+│   └── llm_config.json    # Default settings
+├── src/                   # Application source code
+│   ├── __init__.py
+│   ├── backend/           # Backend API logic
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── schemas.py
+│   ├── chatbot/           # Chatbot implementation
+│   │   ├── __init__.py
+│   │   ├── context/       # Prompt templates
+│   │   │   ├── system.yaml
+│   │   │   └── user.yaml
+│   │   ├── core/          # Core agent logic
+│   │   │   ├── agent.py
+│   │   │   ├── base_agent.py
+│   │   │   └── context.py
+│   │   └── tools/         # Chatbot tools
+│   │       ├── __init__.py
+│   │       ├── builder.py
+│   │       ├── definitions.py
+│   │       ├── math.py
+│   │       └── web_search.py
+│   └── frontend/          # Static frontend assets
+│       └── static/
+│           ├── app.js
+│           ├── index.html
+│           └── style.css
+└── tests/                 # Automated test suite
+    ├── backend/
+    └── chatbot/
+        ├── core/
+        │   ├── test_agent.py
+        │   ├── test_base_agent.py
+        │   └── test_context_manager.py
+        └── tools/
+            ├── test_current_date_tool.py
+            ├── test_math_tool.py
+            └── test_web_search_tool.py
 ```
+
+Local and generated artifacts such as `.venv`, `.pytest_cache`, `.ruff_cache`, `__pycache__`, and `.env` are intentionally omitted from the tree above.
 
 ### 1.1 Application Configuration  
 The app's configuration is managed within the `config` directory. The `app_config.py` file contains the main application configuration logic, which loads settings from environment variables and the `llm_config.json` file. The `llm_config.json` file defines the available LLM providers and models that the chatbot can use, along with their respective configurations. Environment variables may override configurations specified in the JSON file, allowing for dynamic adjustments without modifying the codebase.

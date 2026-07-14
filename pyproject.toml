@@ -1,7 +1,7 @@
 [project]
 name = "ai-chatbot-assistant"
-version = "0.0.1"
-description = "Project based on building a framework-less agentic AI chatbot assistant to solve common questions and tasks."
+version = "0.0.5"
+description = "AI chatbot assistant served on a GUI to solve user queries."
 readme = "README.md"
 requires-python = ">=3.13.0"
 dependencies = [
@@ -67,3 +67,8 @@ quote-style = "double"
 "!__init__.py" = ["D100"]
 # Don't lint function calls as function default arguments for FastAPI app
 "src/backend/main.py" = ["B008"]
+
+# Test Suite
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"

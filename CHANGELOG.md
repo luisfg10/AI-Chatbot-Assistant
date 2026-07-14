@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
+## [v0.0.6] (WIP)  
+* Added unit testing with partial coverage for the backend part of the application.  
+
 ## [v0.0.5]  
 * Added basic agent tools: the agent can now fetch today's date and perform basic arithmetic operations (add, substract, multiply, divide, exponentiate).  
 * Added a web search tool to the agent using Tavily's search endpoint. This tool is only available to the agent if the environment variable `TAVILY_API_KEY` is provided on service startup.  
