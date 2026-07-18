@@ -2,19 +2,16 @@ import re
 
 import pytest
 
-from src.chatbot.tools.definitions import (
-    get_current_date,
-)
+from src.chatbot.tools.definitions import evaluate_math_expression, get_current_date
 
 
 class TestGetCurrentDate:
     """
-    Test the get_current_date function non-exhaustively.
+    Test the `get_current_date` function.
 
     Notes
     -----
-        * Pending test for actually returning today's date, seems
-        like an overkill.
+        TODO: Test the function actually returns today's date.
     """
 
     @pytest.fixture
@@ -54,8 +51,80 @@ class TestGetCurrentDate:
         assert 1 <= day <= 31
 
 
-class EvaluateMathExpression:
-    """Test the evaluate_math_expression function."""
+class TestEvaluateMathExpression:
+    """
+    Test the `evaluate_math_expression` function.
+
+    Notes
+    -----
+        * By design, this function is an agent-facing wrapper
+        of a more thorough implementation. Invalid expressions
+        are intentionally not covered here, they are covered in
+        `test_math.py`.
+    """
+
+    @pytest.mark.parametrize("expression, result", [
+        ("2 + 2", "4"),
+        ("3 * (9 + 2) / 1.264", "26.11"),
+        ("2 ** 10 / 3.14", "326.11"),
+        ("1+1+1+1+1+1+1+1/34", "7.03"),
+        ("1-2+3-4+5-6+7", "4")
+    ])
+    def test_valid_expressions(
+        self,
+        expression: str,
+        result: str,
+        roundoff: int = 2
+    ) -> None:
+        """
+        Test the tool returns the correct result for valid expressions.
+
+        Parameters
+        ----------
+            ...
+            roundoff: int = 2
+                The number of decimals to which to round the obtained result,
+                so that the test doesn't fail because of rounding errors.
+        """
+        obtained_result = round(
+            float(evaluate_math_expression(expression)), roundoff
+        )
+        expected_result = round(float(result), roundoff)
+        assert obtained_result == expected_result
+
+    @pytest.mark.parametrize("expression, result", [
+        ("2 x 2", "4"),
+        ("2 X 3", "6"),
+        ("5X9", "45"),
+        ("7x2", "14"),
+        ("1^2", "1"),
+        ("5^3x1", "125")
+    ])
+    def test_convertable_valid_expressions(
+        self,
+        expression: str,
+        result: str,
+        roundoff: int = 2
+    ) -> None:
+        """
+        Test expressions that can be converted into valid.
+
+        Characters like "X" and "^", while not directly valid,
+        should be interpreted by the function and translated to its
+        appropriate, valid character so the expression can be evaluated.
+
+        Parameters
+        ----------
+            ...
+            roundoff: int = 2
+                The number of decimals to which to round the obtained result,
+                so that the test doesn't fail because of rounding errors.
+        """
+        obtained_result = round(
+            float(evaluate_math_expression(expression)), roundoff
+        )
+        expected_result = round(float(result), roundoff)
+        assert obtained_result == expected_result
 
 
 class PerformWebSearch:

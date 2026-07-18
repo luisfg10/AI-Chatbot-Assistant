@@ -224,6 +224,15 @@ def calculate(expression: str) -> Number:
     if not isinstance(expression, str) or not expression.strip():
         raise CalculatorError("Expression must be a non-empty string")
 
+    expression = expression.lower()
+
+    # Attempt to "translate" characters to valid, evaluable operators
+    char_mapping = str.maketrans({
+        "x": "*",
+        "^": "**"
+    })
+    expression = expression.translate(char_mapping)
+
     if len(expression) > MAX_EXPRESSION_LENGTH:
         raise CalculatorError(
             f"Expression is {len(expression)} characters long, which exceeds "
