@@ -37,10 +37,11 @@ Configuration Variables
 
     * MAX_EXPRESSION_LENGTH: # of characters allowed in the expression.
     * MAX_OPERATOR_COUNT
-    * MAX_EXPONENT_MAGNITUDE: Max value for exponents, independent of its base
+    * MAX_EXPONENT_MAGNITUDE: Max value for exponents, independent of their base
     * MAX_DECIMAL_PLACES: # Digits to round off a response to
-    * MAX_EXPONENT_FOR_LARGE_BASE_CHECK: The magnitude of the exponent above which
-    the base is checked for its magnitude using MAX_BASE_FOR_LARGE_EXPONENT
+    * MAX_EXPONENT_FOR_LARGE_BASE_CHECK: Exponent magnitude considered "large"
+    * MAX_BASE_FOR_LARGE_EXPONENT: In case the exponent is considered "large"
+      per the previous constant, the max value allowed for said exponent's base
 
 """
 
@@ -52,7 +53,7 @@ Number = int | float
 # ------------------------------------------------------------------
 # Config
 
-# Standalone constants
+# Math constants
 MAX_EXPRESSION_LENGTH = 200
 MAX_OPERATOR_COUNT = 25
 MAX_EXPONENT_MAGNITUDE = 1000
@@ -233,6 +234,14 @@ def calculate(expression: str) -> Number:
     })
     expression = expression.translate(char_mapping)
 
+    # Invariant for constants config
+    if MAX_EXPRESSION_LENGTH < MAX_OPERATOR_COUNT:
+        raise ValueError(
+            "Implementation error: `MAX_EXPRESSION_LENGTH` cannot "
+            "be greater than `MAX_OPERATOR_COUNT`."
+        )
+
+    # Validate max chars in expression
     if len(expression) > MAX_EXPRESSION_LENGTH:
         raise CalculatorError(
             f"Expression is {len(expression)} characters long, which exceeds "
