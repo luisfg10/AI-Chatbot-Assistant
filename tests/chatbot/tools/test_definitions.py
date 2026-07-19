@@ -59,8 +59,7 @@ class TestEvaluateMathExpression:
     -----
         * By design, this function is an agent-facing wrapper
         of a more thorough implementation. Invalid expressions
-        are intentionally not covered here, they are covered in
-        `test_math.py`.
+        are covered in `test_math.py`.
     """
 
     @pytest.mark.parametrize("expression, result", [
@@ -127,5 +126,5 @@ class TestEvaluateMathExpression:
         assert obtained_result == expected_result
 
 
-class PerformWebSearch:
+class TestPerformWebSearch:
     """Test the perform_web_search function."""
