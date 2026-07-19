@@ -1,20 +1,21 @@
-import pytest
 import random
 
-from src.chatbot.tools.math import (
-    calculate,
-    CalculatorError,
-    MAX_EXPRESSION_LENGTH,
-    MAX_OPERATOR_COUNT,
-    MAX_EXPONENT_MAGNITUDE,
-    MAX_DECIMAL_PLACES,
-    MAX_BASE_FOR_LARGE_EXPONENT,
-    MAX_EXPONENT_FOR_LARGE_BASE_CHECK
-)
+import pytest
 
+from src.chatbot.tools.math import (
+        MAX_BASE_FOR_LARGE_EXPONENT,
+        MAX_DECIMAL_PLACES,
+        MAX_EXPONENT_FOR_LARGE_BASE_CHECK,
+        MAX_EXPONENT_MAGNITUDE,
+        MAX_EXPRESSION_LENGTH,
+        MAX_OPERATOR_COUNT,
+        CalculatorError,
+        calculate,
+)
 
 # ------------------------------------------------------------------
 # Utils for Testing
+
 
 def build_test_expression(
         pass_expr_len: bool,
@@ -23,98 +24,98 @@ def build_test_expression(
         max_op_count: int = MAX_OPERATOR_COUNT,
         test_cases: int = 5,
         random_seed: int = 50
-    ) -> list[str]:
-        """
-        Build a random expression meeting specified char and operator lengths.
+) -> list[str]:
+    """
+    Build a random expression meeting specified char and operator lengths.
 
-        Each term within each generated test expression has the same uniform
-        value (see examples below).
+    Each term within each generated test expression has the same uniform
+    value (see examples below).
 
-        Parameters
-        ----------
-            pass_expr_len: bool
-                Whether or not the expression should meet the
-                `max_expression_length` value.
-            pass_op_count: bool
-                Whether or not the expression should meet the
-                `max_operator_count` value.
-            max_expr_len: int
-                The max characters allowed in an expression in order for
-                it to be considered valid.
-            max_op_count: int
-                The max number of operators allowed in an expression.
-                This is taken into account to eliminate possible overlap
-                with the previous parameter, but isn't tested here.
-            test_cases: int
-                The number of tests to generate meeting the criteria.
-            random_seed: int
-                The seed for random number generation.
-                Important for guaranteeing reproducibility of results.
+    Parameters
+    ----------
+        pass_expr_len: bool
+            Whether or not the expression should meet the
+            `max_expression_length` value.
+        pass_op_count: bool
+            Whether or not the expression should meet the
+            `max_operator_count` value.
+        max_expr_len: int
+            The max characters allowed in an expression in order for
+            it to be considered valid.
+        max_op_count: int
+            The max number of operators allowed in an expression.
+            This is taken into account to eliminate possible overlap
+            with the previous parameter, but isn't tested here.
+        test_cases: int
+            The number of tests to generate meeting the criteria.
+        random_seed: int
+            The seed for random number generation.
+            Important for guaranteeing reproducibility of results.
 
-        Returns
-        -------
-            list[str]
-                A list of math expressions in str form meeting the
-                required criteria.
+    Returns
+    -------
+        list[str]
+            A list of math expressions in str form meeting the
+            required criteria.
 
-        Examples
-        --------
-        >>> example = TestMath().build_test_expression(
-            pass_expr_len=False,
-            pass_op_count=True,
-            max_expr_len=10,
-            max_op_count=5,
-            test_cases=3
-        )
-        >>> print(example)
-        [
-            '111111+111111+111111',
-            '111111111111111+111111111111111',
-            '11111+11111+11111+11111'
-        ]
-        """
-        # Seed randomness
-        rd = random.Random(random_seed)
-        # Determine total operators to use per generated test
-        if pass_op_count:
-            operator_counts = [
-                  rd.randint(1, max_op_count)
-                  for _ in range(1, test_cases + 1)
-            ]
-        else:
-            operator_counts = [
-                rd.randint(max_op_count + 1, max_op_count * 2)
+    Examples
+    --------
+    >>> example = TestMath().build_test_expression(
+        pass_expr_len=False,
+        pass_op_count=True,
+        max_expr_len=10,
+        max_op_count=5,
+        test_cases=3
+    )
+    >>> print(example)
+    [
+        '111111+111111+111111',
+        '111111111111111+111111111111111',
+        '11111+11111+11111+11111'
+    ]
+    """
+    # Seed randomness
+    rd = random.Random(random_seed)
+    # Determine total operators to use per generated test
+    if pass_op_count:
+        operator_counts = [
+                rd.randint(1, max_op_count)
                 for _ in range(1, test_cases + 1)
-            ]
+        ]
+    else:
+        operator_counts = [
+            rd.randint(max_op_count + 1, max_op_count * 2)
+            for _ in range(1, test_cases + 1)
+        ]
 
-        # Determine total digits to use per test
-        # chars = digits per term + (digits per term + 1) * # ops
-        # digits per term = (# chars - # ops) / (# ops + 1)
-        if pass_expr_len:
-            digits_per_term = [
-                rd.randint(
-                    1,
-                    (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1)
-                )
-                for i in range(0, test_cases)
-            ]
-        else:
-            digits_per_term = [
-                rd.randint(
-                    (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1) + 1,
-                    2 * (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1)
-                )
-                for i in range(0, test_cases)
-            ]
+    # Determine total digits to use per test
+    # chars = digits per term + (digits per term + 1) * # ops
+    # digits per term = (# chars - # ops) / (# ops + 1)
+    if pass_expr_len:
+        digits_per_term = [
+            rd.randint(
+                1,
+                (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1)
+            )
+            for i in range(0, test_cases)
+        ]
+    else:
+        digits_per_term = [
+            rd.randint(
+                (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1) + 1,
+                2 * (max_expr_len - operator_counts[i]) // (operator_counts[i] + 1)
+            )
+            for i in range(0, test_cases)
+        ]
 
-        # Build test expressions
-        tests = []
-        for i in range(0, test_cases):
-            term = "1" * digits_per_term[i]
-            all_test_terms = [term] * (operator_counts[i] + 1)
-            tests.append("+".join(all_test_terms))
+    # Build test expressions
+    tests = []
+    for i in range(0, test_cases):
+        term = "1" * digits_per_term[i]
+        all_test_terms = [term] * (operator_counts[i] + 1)
+        tests.append("+".join(all_test_terms))
 
-        return tests
+    return tests
 
 
 # ------------------------------------------------------------------
@@ -155,7 +156,7 @@ class TestMath:
     def test_code_exec_forbidden(self, expression: str) -> None:
         """
         Test that code execution calls raise a CalculatorError.
-        
+
         Parameters
         ----------
             expression: str
@@ -242,7 +243,7 @@ class TestMath:
     ) -> None:
         """
         Test upper limits for number exponentiation are enforced.
-        
+
         Parameters
         ----------
             max_exp_for_base_check: int
@@ -273,7 +274,7 @@ class TestMath:
     ) -> None:
         """
         Test that results conform to the limit of `MAX_DECIMAL_PLACES`.
-        
+
         Parameters
         ----------
             max_decimal_places: int
