@@ -6,7 +6,7 @@ import pytest
 from src.chatbot.tools.definitions import (
     evaluate_math_expression,
     get_current_date,
-    perform_web_search
+    perform_web_search,
 )
 
 
@@ -134,7 +134,7 @@ class TestEvaluateMathExpression:
 class TestPerformWebSearch:
     """
     Test the perform_web_search function.
-    
+
     Basically only mocks the tool's response when called
     using the "query" parameter, which is quite limited and
     of questionable utility.
