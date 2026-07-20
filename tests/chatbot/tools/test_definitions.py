@@ -1,8 +1,13 @@
 import re
+from typing import Any
 
 import pytest
 
-from src.chatbot.tools.definitions import evaluate_math_expression, get_current_date
+from src.chatbot.tools.definitions import (
+    evaluate_math_expression,
+    get_current_date,
+    perform_web_search,
+)
 
 
 class TestGetCurrentDate:
@@ -127,4 +132,49 @@ class TestEvaluateMathExpression:
 
 
 class TestPerformWebSearch:
-    """Test the perform_web_search function."""
+    """
+    Test the perform_web_search function.
+
+    Basically only mocks the tool's response when called
+    using the "query" parameter, which is quite limited and
+    of questionable utility.
+    Does not cover integration tests with the actual external API.
+    """
+
+    def test_correct_agent_wrapper_call(self, mocker: Any) -> None:
+        """
+        Mock the web search tool's response.
+
+        Parameters
+        ----------
+            mocker: Any
+                A pytest mocker, resolved automatically when invoking
+                the tests.
+                Requires the dependency `pytest-mock`.
+
+        Notes
+        -----
+        The patch is done not at the web search tool itself,
+        but on the method called internally by the Tavily client
+        to send the API request to Tavily.
+
+        This test is useful to verify that the function's signature
+        remains valid. If changes are done to the function's signature,
+        they should be made here too.
+        """
+        # Patch actual calling function by mock
+        mock_search = mocker.patch(
+            "src.chatbot.tools.web_search.TavilyClient.search",
+            return_value="mocked search result",
+            autospec=True
+        )
+        # Call mocked function
+        result = perform_web_search(query="Tesla stock price")
+
+        # QA the mock was called correctly with specified params
+        mock_search.assert_called_once_with(
+            mocker.ANY,  # match self for internal class method
+            query="Tesla stock price",
+            simplify_response_for_agent=True
+        )
+        assert result == "mocked search result"
