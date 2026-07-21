@@ -135,32 +135,27 @@ class TestPerformWebSearch:
     """
     Test the perform_web_search function.
 
-    Basically only mocks the tool's response when called
-    using the "query" parameter, which is quite limited and
-    of questionable utility.
     Does not cover integration tests with the actual external API.
     """
 
     def test_correct_agent_wrapper_call(self, mocker: Any) -> None:
         """
-        Mock the web search tool's response.
+        Test the agent search tool exposes the correct parameters.
 
         Parameters
         ----------
             mocker: Any
-                A pytest mocker, resolved automatically when invoking
-                the tests.
+                A pytest mocker, which is resolved automatically
+                when invoking the tests.
                 Requires the dependency `pytest-mock`.
 
         Notes
         -----
-        The patch is done not at the web search tool itself,
-        but on the method called internally by the Tavily client
-        to send the API request to Tavily.
+        The mock.patch is done not to the web search tool itself,
+        but on the method which makes the actual API call to Tavily.
 
-        This test is useful to verify that the function's signature
-        remains valid. If changes are done to the function's signature,
-        they should be made here too.
+        This test is useful to ensure that the agent's tool remains
+        consistent with the actual method doing the search.
         """
         # Patch actual calling function by mock
         mock_search = mocker.patch(
