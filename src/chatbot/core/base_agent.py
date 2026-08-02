@@ -127,14 +127,6 @@ class ChatCompletionsBaseAgent:
         tool calling (tools=None) and also adds a context message to the LLM
         explaining the must answer the user in their next message.
 
-        Notes
-        -----
-            * Includes special considerations for certain OpenAI models for
-            which parameter names have changed.
-
-            * Includes several debugging statements. Control whether these are
-            printed to stderr using the env var LOG_LEVEL.
-
         Parameters
         ----------
             messages: list[dict]
@@ -159,6 +151,14 @@ class ChatCompletionsBaseAgent:
         -------
             list
                 The generated list of messages from the LLM's response.
+
+        Notes
+        -----
+            * Includes special considerations for certain OpenAI models for
+            which parameter names have changed.
+
+            * Includes several debugging statements. Control whether these are
+            printed to stderr using the env var LOG_LEVEL.
 
         Examples
         --------
