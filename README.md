@@ -47,7 +47,7 @@ The project was structured in a modular way and each core functionality of the c
 │   │   │   └── user.yaml
 │   │   ├── core/          # Core agent logic
 │   │   │   ├── agent.py
-│   │   │   ├── base_agent.py
+│   │   │   ├── base_chat_completions.py
 │   │   │   └── context.py
 │   │   └── tools/         # Chatbot tools
 │   │       ├── __init__.py

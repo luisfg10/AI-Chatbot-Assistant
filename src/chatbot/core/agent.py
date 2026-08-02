@@ -1,7 +1,7 @@
 from loguru import logger
 
 from config import AppConfig
-from src.chatbot.core.base_agent import ChatCompletionsBaseAgent
+from src.chatbot.core.base_chat_completions import ChatCompletionsBaseAgent
 from src.chatbot.core.context import ChatbotContextHelper
 from src.chatbot.tools import tool_schema
 
