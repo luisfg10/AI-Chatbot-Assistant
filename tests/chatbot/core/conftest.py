@@ -1,13 +1,17 @@
+"""
+Shared fixtures for building fake OpenAI chat completion objects.
+
+pytest auto-discovers `conftest.py` files, making these fixtures
+available to every test module in this directory (e.g. test_agent.py).
+The SimpleNamespace subclass provides a convenient way of reading and
+writing attributes to an object without having to define a class from
+scratch for it.
+"""
 import json
 from collections.abc import Callable
 from types import SimpleNamespace
 
 import pytest
-
-# ------------------------------------------------------------------
-# Shared fixtures for building fake OpenAI chat completion objects.
-# pytest auto-discovers `conftest.py` files, making these fixtures
-# available to every test module in this directory (e.g. test_agent.py).
 
 
 @pytest.fixture
@@ -53,7 +57,11 @@ def make_message() -> Callable[..., SimpleNamespace]:
         content: str | None = None,
         tool_calls: list | None = None
     ) -> SimpleNamespace:
-        return SimpleNamespace(role=role, content=content, tool_calls=tool_calls)
+        return SimpleNamespace(
+            role=role,
+            content=content,
+            tool_calls=tool_calls
+        )
     return _make
 
 
@@ -62,6 +70,9 @@ def make_response() -> Callable[..., SimpleNamespace]:
     """Build a factory for fake OpenAI chat completion responses."""
     def _make(finish_reason: str, message: SimpleNamespace) -> SimpleNamespace:
         return SimpleNamespace(
-            choices=[SimpleNamespace(finish_reason=finish_reason, message=message)]
+            choices=[SimpleNamespace(
+                finish_reason=finish_reason,
+                message=message
+            )]
         )
     return _make
