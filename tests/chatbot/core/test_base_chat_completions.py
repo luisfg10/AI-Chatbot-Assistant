@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
@@ -9,6 +10,69 @@ from src.chatbot.core.base_chat_completions import ChatCompletionsBaseAgent
 
 class TestChatCompletionsBaseAgent:
     """Test `ChatCompletionsBaseAgent`."""
+
+    # ------------------------------------------------------------------
+    # Fixtures
+
+    @pytest.fixture
+    def models_dict(self) -> dict[str, dict[str, str]]:
+        """Build a minimal models dictionary for agent initialization."""
+        return {
+            "model-a": {
+                "base url": "https://example-a.test/v1",
+                "api key": "test-key-a"
+            },
+            "model-b": {
+                "base url": "https://example-b.test/v1",
+                "api key": "test-key-b"
+            }
+        }
+
+    @pytest.fixture
+    def make_tool_call(self) -> Callable[..., SimpleNamespace]:
+        """Build a factory for fake OpenAI tool call objects."""
+        def _make(
+            tool_name: str,
+            tool_call_id: str = "tool-call-1",
+            tool_type: str = "function",
+            arguments: dict | None = None
+        ) -> SimpleNamespace:
+            return SimpleNamespace(
+                id=tool_call_id,
+                type=tool_type,
+                function=SimpleNamespace(
+                    name=tool_name,
+                    arguments=json.dumps(arguments or {})
+                )
+            )
+        return _make
+
+    @pytest.fixture
+    def make_message(self) -> Callable[..., SimpleNamespace]:
+        """Build a factory for fake OpenAI assistant messages."""
+        def _make(
+            role: str = "assistant",
+            content: str | None = None,
+            tool_calls: list | None = None
+        ) -> SimpleNamespace:
+            return SimpleNamespace(
+                role=role,
+                content=content,
+                tool_calls=tool_calls
+            )
+        return _make
+
+    @pytest.fixture
+    def make_response(self) -> Callable[..., SimpleNamespace]:
+        """Build a factory for fake OpenAI chat completion responses."""
+        def _make(finish_reason: str, message: SimpleNamespace) -> SimpleNamespace:
+            return SimpleNamespace(
+                choices=[SimpleNamespace(
+                    finish_reason=finish_reason,
+                    message=message
+                )]
+            )
+        return _make
 
     @pytest.fixture
     def agent(
@@ -80,6 +144,9 @@ class TestChatCompletionsBaseAgent:
             agent.client.chat.completions,
             "create"
         )
+
+    # ------------------------------------------------------------------
+    # Tests
 
     def test_llm_api_call_returns_stop_response(
         self,
