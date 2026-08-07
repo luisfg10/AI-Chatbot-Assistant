@@ -15,7 +15,7 @@ class TestChatCompletionsBaseAgent:
     # Fixtures
 
     @pytest.fixture
-    def models_dict() -> dict[str, dict[str, str]]:
+    def models_dict(self) -> dict[str, dict[str, str]]:
         """Build a minimal models dictionary for agent initialization."""
         return {
             "model-a": {
@@ -30,7 +30,7 @@ class TestChatCompletionsBaseAgent:
 
 
     @pytest.fixture
-    def make_tool_call() -> Callable[..., SimpleNamespace]:
+    def make_tool_call(self) -> Callable[..., SimpleNamespace]:
         """Build a factory for fake OpenAI tool call objects."""
         def _make(
             tool_name: str,
@@ -50,7 +50,7 @@ class TestChatCompletionsBaseAgent:
 
 
     @pytest.fixture
-    def make_message() -> Callable[..., SimpleNamespace]:
+    def make_message(self) -> Callable[..., SimpleNamespace]:
         """Build a factory for fake OpenAI assistant messages."""
         def _make(
             role: str = "assistant",
@@ -66,7 +66,7 @@ class TestChatCompletionsBaseAgent:
 
 
     @pytest.fixture
-    def make_response() -> Callable[..., SimpleNamespace]:
+    def make_response(self) -> Callable[..., SimpleNamespace]:
         """Build a factory for fake OpenAI chat completion responses."""
         def _make(finish_reason: str, message: SimpleNamespace) -> SimpleNamespace:
             return SimpleNamespace(
