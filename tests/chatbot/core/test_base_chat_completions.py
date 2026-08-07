@@ -28,7 +28,6 @@ class TestChatCompletionsBaseAgent:
             }
         }
 
-
     @pytest.fixture
     def make_tool_call(self) -> Callable[..., SimpleNamespace]:
         """Build a factory for fake OpenAI tool call objects."""
@@ -48,7 +47,6 @@ class TestChatCompletionsBaseAgent:
             )
         return _make
 
-
     @pytest.fixture
     def make_message(self) -> Callable[..., SimpleNamespace]:
         """Build a factory for fake OpenAI assistant messages."""
@@ -63,7 +61,6 @@ class TestChatCompletionsBaseAgent:
                 tool_calls=tool_calls
             )
         return _make
-
 
     @pytest.fixture
     def make_response(self) -> Callable[..., SimpleNamespace]:
