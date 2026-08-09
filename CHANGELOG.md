@@ -1,8 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
-## [v0.0.6] (WIP)  
-* Added unit testing with partial coverage for the backend part of the application.  
+## [v0.0.6]  
+* Added non-exhaustive unit tests for key parts of the backend application: agent tools, agent core functionality (context fetching, chat completions endpoint, memory), and the backend app endpoints.  
+* Added a CI workflow using GitHub actions to run on every PR and push to the main branch: it runs the entire test suite using `pytest`, and runs linters using uv's `ruff`. Failed CIs block merging.   
 
 ## [v0.0.5]  
 * Added basic agent tools: the agent can now fetch today's date and perform basic arithmetic operations (add, substract, multiply, divide, exponentiate).  
