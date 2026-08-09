@@ -1,6 +1,6 @@
 [project]
 name = "ai-chatbot-assistant"
-version = "0.0.5"
+version = "0.0.6"
 description = "AI chatbot assistant served on a GUI to solve user queries."
 readme = "README.md"
 requires-python = ">=3.13.0"
