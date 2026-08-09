@@ -179,6 +179,9 @@ async def set_model(
     Notice the agent_store object already references the in-memory object,
     so it is not necessary to update it after changing the model.
 
+    TODO: Make more robust so it fails gracefully (not a generic 500)
+    in case an invalid model name is provided.
+
     Parameters
     ----------
         body : dict
