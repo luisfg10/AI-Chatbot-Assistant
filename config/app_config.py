@@ -1,5 +1,5 @@
 """Define default settings for the application."""
-# Built-ins
+
 import json
 import os
 import sys
@@ -8,28 +8,15 @@ from dotenv import load_dotenv
 from loguru import logger
 
 
-# Class for managing environment variables
 class AppConfig:
-    """
-    Utility class for managing the app's configurations and settings.
-
-    Notes
-    -----
-        - Use llm_config.json to define available LLM providers, their
-        models and chat request settings.
-        - Base URLs should be compatible with OpenAI's Python SDK.
-        - Use the .env file to set the API keys for LLM providers.
-        - Available models for the UI are resolved as the set of available
-        models for which the provider has a set API key defined in the .env file.
-        - No support for self-hosted models yet.
-    """
+    """Utility class for managing app settings."""
 
     # Default Directories (should end with "/")
     CHATBOT_CONTEXT_DIR: str = "src/chatbot/context/"
     DOTENV_FILE_PATH: str = "config/.env"
     LLM_CONFIG_PATH: str = "config/llm_config.json"
 
-    # Load reference json for llm config
+    # Load llm_config file
     if os.path.exists(LLM_CONFIG_PATH):
         with open(LLM_CONFIG_PATH) as f:
             LLM_CONFIG: dict = json.load(f)
@@ -46,13 +33,13 @@ class AppConfig:
     # ------------------------------------------------------------------
     # Environment Variables
 
-    # Load .env file
+    # Load .env file from specified path
     load_dotenv(
         os.path.join(os.getcwd(), f"{DOTENV_FILE_PATH}"),
-        override=True
+        override=True  # overridde any existing env vars
     )
 
-    # Resolve available models and providers
+    # Resolve available LLMs and providers
     AVAILABLE_MODELS: dict = {
         provider: details
         for provider, details in LLM_CONFIG.get("providers", {}).items()
@@ -63,7 +50,7 @@ class AppConfig:
         for provider in AVAILABLE_MODELS.keys()
     }
 
-    # Tavily (web searcher)
+    # Tavily credentials (web search tool)
     try:
         tavily_url = LLM_CONFIG["tools"]["web search"]["tavily"]
     except KeyError:
@@ -73,12 +60,13 @@ class AppConfig:
         "api key": os.getenv("TAVILY_API_KEY")
     }
 
-    # Determine logging level
+    # Resolve logging level
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper().strip()
-    if LOG_LEVEL not in logger._core.levels:  # Check invariant
-        raise ValueError(
+    if LOG_LEVEL not in logger._core.levels:  # Check invalid value
+        logger.error(
             f"Invalid LOG_LEVEL provided: '{LOG_LEVEL}'. "
-            f"Valid options: {list(logger._core.levels.keys())}"
+            f"Valid options: {list(logger._core.levels.keys())}.\n"
+            "Continuing with default LOG_LEVEL."
         )
     if LOG_LEVEL != "DEBUG":
         logger.remove()
@@ -86,6 +74,7 @@ class AppConfig:
 
     # Log initialized config
     logger.info(
-        f"Initialized AppConfig with available providers: {list(AVAILABLE_MODELS.keys())} "
+        f"Initialized AppConfig with "
+        f"available LLM providers: {list(AVAILABLE_MODELS.keys())} "
         f"and default config: {DEFAULT_CONFIG}"
     )
