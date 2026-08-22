@@ -8,10 +8,10 @@ from src.chatbot.tools import tool_schema
 
 class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
     """
-    Class for chatbot that interacts with a user via a chat interface.
+    AI agent that interacts with a user by chat.
 
-    Inherits from ChatCompletionsBaseAgent for LLM API interactions and from
-    ChatbotContextHelper for managing the chatbot's context.
+    Inherits from ChatCompletionsBaseAgent for LLM API interactions
+    and from ChatbotContextHelper for managing the chatbot's context.
     """
 
     def __init__(
@@ -19,44 +19,46 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             available_models: dict = AppConfig.AVAILABLE_MODELS,
             provider_api_keys: dict = AppConfig.PROVIDER_API_KEYS,
             default_config: dict = AppConfig.DEFAULT_CONFIG,
-            supported_personalities: list | tuple = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES
+            supported_personalities: list[str] | tuple[str] = AppConfig.SUPPORTED_CHATBOT_PERSONALITIES
     ) -> None:
         """
-        Initialize the ChatbotAssistant.
+        Initialize the class instance.
 
         Parameters
         ----------
-            available_models: dict
-                A dictionary of available LLM providers and their corresponding
-                models, as defined in the app config.
-            provider_api_keys: dict
-                A dictionary mapping LLM providers to their corresponding API keys,
-                as defined in the app config.
-            default_config: dict
-                A dictionary containing the default configuration for the chatbot,
-                including default LLM provider, model code, and other settings.
-            supported_personalities: list
-                A list of supported chatbot personalities.
-                Each personality string should have matching system prompt
-                templates in the directory path AppConfig.CHATBOT_CONTEXT_DIR
+        available_models: dict
+            A dict of available LLM providers and their models.
+        provider_api_keys: dict
+            A dict mapping LLM providers to their API keys.
+        default_config: dict
+            A dict containing the default agent configuration,
+            including default LLM provider, model code, etc.
+        supported_personalities: list[str] | tuple[str]
+            A list or tuple of supported chatbot personalities.
+            Each personality string should have matching system prompt
+            templates in the directory path AppConfig.CHATBOT_CONTEXT_DIR
         """
-        # Create an object for storing personality-specific API call parameters
-        self.supported_personalities = supported_personalities
+        # Check invariant: supported personalities must be list or tuple
         if (
-            not isinstance(self.supported_personalities, (list, tuple))
-            or not self.supported_personalities
-        ):  # Check invariant: supported personalities must be list or tuple
+            not isinstance(supported_personalities, (list, tuple))
+            or not supported_personalities
+        ):
             raise ValueError(
                 "Didn't receive a valid value for "
                 "`supported_personalities`."
             )
-        # Set default personality to show on Chatbot startup
+        self.supported_personalities = supported_personalities
+
+        # Set default agent personality from valid options
         default_personality = default_config.get("personality")
-        if default_personality not in self.supported_personalities:
+        if (
+            default_personality is None
+            or default_personality not in self.supported_personalities
+        ):
             default_personality = self.supported_personalities[0]
         self.default_personality = default_personality
 
-        # Set total messages in messages list before memory compacting
+        # Set memory compacint limit
         self.compacting_msg_limit = int(
             default_config.get("compacting message limit", 30)
         )
@@ -66,7 +68,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             raise ValueError(
                 f"Value for `available_models` is invalid: {available_models}"
             )
-        # Build the list of available models
+
+        # Build available models list
         models = {}
         for provider, details in available_models.items():
             base_url = details["urls"]["api"]
@@ -78,7 +81,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
                 } for model in details.get("available models", [])
             })
 
-        # Initialize parent classes
+        # Init parent classes
         ChatCompletionsBaseAgent.__init__(
             self,
             models=models,
@@ -91,7 +94,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         # Init messages list
         self.messages: list[dict] = []
 
-        # Initialize personality
+        # Init personality
         self.set_personality()
 
     def set_personality(
@@ -99,111 +102,127 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             personality: str | None = None
     ) -> None:
         """
-        Set the chatbot's instructions depending on its selected personality.
+        Set the chatbot's instructions based on its selected personality.
 
-        This method may be called during initialization or at any other time
-        to update the chatbot's prompts based on a new input.
-        Modifies the first message in the messages list to the self.
+        Can be used at any point in the agent's lifecycle to set/update
+        its desired behavior towards the user.
 
         Parameters
         ----------
-            personality: str | None
-                The personality for which to set the chatbot's system prompts.
-                If not provided, defaults to the default personality saved to
-                the self.
+        personality: str | None
+            The personality to use.
+            If not provided, defaults to the default personality saved to
+            the self.
 
         Returns
         -------
-            None
-                Updates the first message in the messages list containing the
-                chatbot's isntructions.
-                In the case of the instructions for compacting, saves the
-                instructions to use to the self.
-        """
-        if personality not in self.supported_personalities:
-            personality = self.default_personality
+        None
+            Updates the first message in the messages list containing the
+            agent's system prompt.
 
-        # Chatbot instructions
-        chatbot_instructions = ChatbotContextHelper.get_chatbot_instructions(
+        Notes
+        -----
+        - Under the current logic, compacting instructions are also dependant
+        on the chatbot's selected personality. These are also updated on
+        personality changes.
+        """
+        # Check early conditions
+        if (
+            personality is None
+            or personality not in self.supported_personalities
+        ):
+            personality = self.default_personality
+        if (
+            hasattr(self, 'current_personality')
+            and self.current_personality == personality
+        ):
+            return
+
+        # Set agent instructions
+        agent_instructions = ChatbotContextHelper.get_agent_instructions(
             self, personality
         )
         instructions_message = {
             "role": "system",
-            "content": chatbot_instructions
+            "content": agent_instructions
         }
 
-        if len(self.messages) > 0:
+        if len(self.messages) > 0:  # Update running agent
             self.messages[0] = instructions_message
-        else:
+        else:  # On agent init
             self.messages.append(instructions_message)
 
-        # Compacting instructions
+        # Update/set compacting instructions
         self.compacting_instructions = ChatbotContextHelper.get_compacting_instructions(
             self, personality
         )
 
+        # Save current personality
+        self.current_personality = personality
+
     def chatbot_call(
             self,
-            user_query: str,
+            user_message: str,
             tools: dict = tool_schema
-    ) -> str | None:
+    ) -> str:
         """
-        Make a chatbot API call with included context management.
+        Call chatbot with a user message.
 
         Parameters
         ----------
-            user_query: str
-                The user's input query to the chatbot.
-            tools: dict
-                Dictionary containing the tools the LLM can call.
+        user_message: str
+            ...
+        tools: dict
+            Dictionary containing the tools available for the LLM.
 
         Returns
         -------
-            str | None
-                The generated response from the chatbot as a string,
-                or None if the API call fails.
+        str
+            The agent's response.
         """
-        # Check that recursive tool call limit prompt is saved to self
+        # Check recursive tool call limit prompt is saved to self
         if not hasattr(self, "rec_tool_call_lim_prompt"):
-            self.rec_tool_call_lim_prompt = self.get_rec_tool_lim_prompt()
+            self.rec_tool_call_lim_prompt = ChatbotContextHelper.get_rec_tool_lim_prompt(
+                self
+            )
 
-        # Append user query to messages
+        # Append user message to list
         self.messages.append({
             "role": "user",
-            "content": user_query
+            "content": user_message
         })
 
+        # Get new messages resulting from LLM API call
         new_messages = ChatCompletionsBaseAgent.llm_api_call(
             self,
             messages=self.messages,
             tools=tools,
             tool_limit_reached_prompt=self.rec_tool_call_lim_prompt
         )
-        llm_response = None
 
         # Update messages and save LLM's response
         llm_response = new_messages[-1]["content"]
         self.messages.extend(new_messages)
 
-        # Evaluate compacting
+        # Run compacting check
         self._compact_messages()
 
         return llm_response
 
     def _compact_messages(self) -> None:
         """
-        Run compacting to summarize the key details in the current conversation.
+        Compact the messages list in the current conversation.
 
-        Makes a transcript of the current messages list as a single string,
+        Notes
+        -----
+        - Makes an LLM API call to summarize the key details in the conversation
+        depending on its selected personality.
+        - Makes a transcript of the current messages list as a single string,
         then sends as a user message along with the compacting instruction.
-
-        Returns
-        -------
-            None
-                Updates the chatbot's messages list attribute.
-                Keeps two messages in the messages list:
-                    1. The chatbot instructions
-                    2. The conversation summary so far
+        - Updates the chatbot's messages list attribute.
+        Keeps two messages in the messages list:
+            1. The chatbot instructions
+            2. The conversation summary so far
         """
         # Skip if memory update is not needed
         if len(self.messages) <= self.compacting_msg_limit:
@@ -214,7 +233,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             "Compacting..."
         )
 
-        # Check if long-term memory exists
+        # Check if long-term memory exists so it's included on context
         long_term_memory = (
             self.long_term_memory
             if hasattr(self, "long_term_memory")
@@ -254,15 +273,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
 
     def reset_memory(self) -> None:
         """
-        Reset the chatbot's memory, clearing both long-term and short-term memory.
+        Reset all of the agent's memory, both long and short term.
 
-        This can be useful for starting a new conversation or clearing any
-        accumulated context.
-
-        Returns
-        -------
-            None
-                Resets the chatbot's memory to an empty state, outside of its
-                instructions based on personality.
+        Only keeps system instructions based on personality.
         """
         self.messages = self.messages[:1]
