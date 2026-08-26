@@ -165,7 +165,7 @@ class TestChatbotAssistant:
 
         # Validate that new instructions were saved to self
         assert chatbot.messages[0]["content"] != original_content
-        assert chatbot.messages[0]["content"] == chatbot.get_chatbot_instructions("professional")
+        assert chatbot.messages[0]["content"] == chatbot.get_agent_instructions("professional")
 
     def test_set_personality_invalid_falls_back_to_default(
         self,

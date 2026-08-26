@@ -20,55 +20,69 @@ from src.backend.schemas import (
 from src.chatbot import ChatbotAssistant
 
 app = FastAPI()
+# Store agents being used per each specific session id (cookie)
 agent_store: dict[str, ChatbotAssistant] = {}
 
 # ------------------------------------------------------------------
-# Homepage
+# Homepage and Dependencies
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
+# Mount static frontend files
+app.mount(
+    "/static",
+    StaticFiles(directory="src/frontend/static"),
+    name="static"
+)
 
 
 @app.get("/")
-async def homepage(session_id: str = Cookie(default=None)) -> FileResponse:
-    """Serve the static SPA frontend and create/save unique session IDs using cookies."""
+async def homepage(
+    session_id: str = Cookie(default=None)
+) -> FileResponse:
+    """Serve the static frontend and save unique session IDs using cookies."""
     response = FileResponse("src/frontend/static/index.html")
+    # Set cookie if it doesn't exist
     if not session_id:
         session_id = str(uuid4())
-        response.set_cookie(key="session_id", value=session_id, path="/", httponly=True)
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            path="/",
+            httponly=True
+        )
         agent_store[session_id] = ChatbotAssistant()
+    # Assign agent to session
     elif session_id not in agent_store:
         agent_store[session_id] = ChatbotAssistant()
-    return response
 
-# ------------------------------------------------------------------
-# Chat and Config Endpoints
+    return response
 
 
 def get_agent(session_id: str = Cookie(default=None)) -> ChatbotAssistant:
     """
     Retrieve the chatbot agent instance for the current session.
 
-    This is defined as a dependency for the chat API endpoints, not to be
-    called directly.
+    Used as a dependency for the chat API endpoints.
 
     Parameters
     ----------
-        session_id : str
-            The unique session ID from the user's cookie.
+    session_id : str
+        The unique session ID from the user's cookie.
 
     Returns
     -------
-        ChatbotAssistant
-            The chatbot agent instance associated with the session.
+    ChatbotAssistant
+        The chatbot agent instance associated with the session.
     """
     # Check invariant: Session must be started
     if not session_id or session_id not in agent_store:
         raise HTTPException(status_code=401, detail="No valid session")
     return agent_store[session_id]
 
+# ------------------------------------------------------------------
+# Backend Endpoints
 
-# Define API router for chat and config endpoints
+
+# API router for backend endpoints
 router = APIRouter(
     prefix="/api",
     dependencies=[Depends(get_agent)]
@@ -80,18 +94,18 @@ async def get_models(
     agent: ChatbotAssistant = Depends(get_agent)
 ) -> AvailableModelsResponse:
     """
-    Get the list of available LLMs supported by the chatbot agent.
+    Get the list of available LLMs for use.
 
     Parameters
     ----------
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
 
     Returns
     -------
-        AvailableModelsResponse
-            A response object containing the list of available models
-            and the default model.
+    AvailableModelsResponse
+        A response object containing the list of available models
+        and the default model.
     """
     return AvailableModelsResponse(
         models=list(agent.models.keys()),
@@ -108,14 +122,13 @@ async def get_personalities(
 
     Parameters
     ----------
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
 
     Returns
     -------
-        AvailablePersonalitiesResponse
-            A response object containing the list of supported personalities
-            and the default personality.
+    AvailablePersonalitiesResponse
+        List of supported personalities and default personality.
     """
     return AvailablePersonalitiesResponse(
         personalities=list(agent.supported_personalities),
@@ -128,17 +141,12 @@ async def reset_memory(
     agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
-    Reset the chatbot agent's memory.
+    Reset the agent's memory.
 
     Parameters
     ----------
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
-
-    Returns
-    -------
-        dict
-            A simple response indicating success.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
     """
     agent.reset_memory()
     return {"ok": True}
@@ -150,19 +158,19 @@ async def chat(
     agent: ChatbotAssistant = Depends(get_agent)
 ) -> ChatResponse:
     """
-    Receive a user message and return the chatbot's response.
+    Receive a user message and return the agent's response.
 
     Parameters
     ----------
-        chat_request : ChatRequest
-            The request body containing the user's message.
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
+    chat_request : ChatRequest
+        The request body containing the user's message.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
 
     Returns
     -------
-        ChatResponse
-            The chatbot's response message.
+    ChatResponse
+        The agent's response message.
     """
     response = agent.chatbot_call(chat_request.message)
     return ChatResponse(response=response)
@@ -174,24 +182,22 @@ async def set_model(
     agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
-    Update the LLM to be called by the chatbot agent.
-
-    Notice the agent_store object already references the in-memory object,
-    so it is not necessary to update it after changing the model.
-
-    TODO: Make more robust so it fails gracefully (not a generic 500)
-    in case an invalid model name is provided.
+    Update the LLM to be used for the agent.
 
     Parameters
     ----------
-        body : dict
-            The request body containing the new model name.
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
+    body : dict
+        The request body containing the new model name.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
 
-    Returns
-    -------
-        dict
+    Notes
+    -----
+    - `agent_store` already references the in-memory object,
+    so the update on the agent instance suffices.
+    - TODO: Make more robust so it fails gracefully (not a generic 500)
+    in case an invalid model name is provided.
+
     """
     agent.set_client(body["model"])
     return {"ok": True}
@@ -203,24 +209,18 @@ async def set_personality(
     agent: ChatbotAssistant = Depends(get_agent)
 ) -> dict:
     """
-    Update the personality traits of the chatbot agent.
-
-    Notice the agent_store object already references the in-memory object,
-    so it is not necessary to update it after changing the personality.
+    Update the agent's personality system prompt.
 
     Parameters
     ----------
-        body : dict
-            The request body containing the new personality traits.
-        agent : ChatbotAssistant
-            The chatbot agent instance for the current session.
-
-    Returns
-    -------
-        dict
+    body : dict
+        The request body containing the new personality traits.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
     """
     agent.set_personality(body["personality"])
     return {"ok": True}
 
 
+# Add router to FastAPI app
 app.include_router(router)
