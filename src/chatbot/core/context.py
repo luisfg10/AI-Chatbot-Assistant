@@ -8,7 +8,7 @@ from config import AppConfig
 
 
 class BaseContextHelper:
-    """General utility class for managing text from .yaml files."""
+    """Access text from YAML files."""
 
     def __init__(
             self,
@@ -19,17 +19,9 @@ class BaseContextHelper:
 
         Parameters
         ----------
-            file_caching: bool = True
-                Whether to save to memory already-loaded files to avoid
-                having to load them again on new calls.
-                This is useful in projects with few files that need to be
-                accessed many times, but might consume greater memory when
-                several files (100+) need to be accessed in a single run.
-                Defaults to True.
-
-        Returns
-        -------
-            None
+        file_caching: bool = True
+            Whether to save loaded files to memory to eliminate
+            fetching on future calls.
         """
         self.file_caching = file_caching
         if self.file_caching:
@@ -42,32 +34,28 @@ class BaseContextHelper:
         """
         Load a YAML file and return its contents as a JSON-type object.
 
-        If self.file_caching is set to True, it will first check to see if
-        the file is loaded to the file store and loaded from there. If it is
-        not already load it, it will do so and avoid doing that next time around.
-
         Parameters
         ----------
-            file_path : str
-                The path to the YAML file to load.
+        file_path : str
+            The path to the YAML file to load.
 
         Returns
         -------
-            dict | list
-                The contents of the YAML file as a dictionary or list.
+        dict | list
+            The contents of the YAML file as a dictionary or list.
 
         Raises
         ------
-            FileNotFoundError
-                If the specified file does not exist.
-            yaml.YAMLError
-                If the file contains invalid YAML syntax.
+        FileNotFoundError
+            If the specified file does not exist.
+        yaml.YAMLError
+            If the file contains invalid YAML syntax.
         """
-        # Optional: load from cache
+        # Evaluate file caching
         if self.file_caching and file_path in self.file_store:
             return self.file_store[file_path]
 
-        # Invariant: Filepath must exist
+        # Check filepath exists
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
             raise FileNotFoundError(f"YAML file not found: {file_path}")
@@ -107,21 +95,21 @@ class BaseContextHelper:
 
         Parameters
         ----------
-            file_path: str
-                The path to the YAML file to load.
-            key_name: str
-                The key in the YAML file whose value should be
-                retrieved and formatted.
-            **kwargs:
-                Additional keyword arguments to use for formatting,
-                in case the retrieved value corresponds to a string
-                with placeholders.
+        file_path: str
+            The path to the YAML file to load.
+        key_name: str
+            The key in the YAML file whose value should be
+            retrieved and formatted.
+        **kwargs:
+            Additional keyword arguments to use for formatting,
+            in case the retrieved value corresponds to a string
+            with placeholders.
 
         Returns
         -------
-            dict | list | str
-                The retrieved value from the YAML file, formatted if
-                applicable.
+        dict | list | str
+            The retrieved value from the YAML file, formatted if
+            applicable.
         """
         file = self.load_yaml_file(file_path)
         if not isinstance(file, dict):
@@ -143,7 +131,7 @@ class BaseContextHelper:
 
 
 class ChatbotContextHelper(BaseContextHelper):
-    """Helper class specialized in managing chatbot context."""
+    """Manage the agent's context from YAML files."""
 
     def __init__(
             self,
@@ -153,46 +141,47 @@ class ChatbotContextHelper(BaseContextHelper):
             file_caching: bool = True
     ) -> None:
         """
-        Initialize the ChatbotContextHelper.
-
-        Assumes a two-file distribution of chatbot context: one for system
-        prompts and one for user prompts.
+        Initialize the class instance.
 
         Parameters
         ----------
-            context_dir: str
-                The directory where the context YAML files are located.
-            system_prompts_filename: str
-                The filename for the system prompts YAML file.
-            user_prompts_filename: str
-                The filename for the user prompts YAML file.
-            file_caching: bool = True
-                Whether to save to memory already-loaded files to avoid
-                having to load them again on new calls.
+        context_dir: str
+            The directory where the agent's context files are.
+        system_prompts_filename: str
+            The filename for the system prompts file.
+        user_prompts_filename: str
+            The filename for the user prompts file.
+        file_caching: bool = True
+            Whether to loaded context files to memory to avoid
+            repeat loading operations.
+
+        Notes
+        -----
+        Assumes a two-file distribution of chatbot context: one for system
+        prompts and one for user prompts.
         """
-        # Invariant check
+        # Check directory is a valid path string
         if not isinstance(context_dir, str):
             raise ValueError("'context_dir' must be a string.")
-
         if not context_dir.endswith("/"):
             context_dir += "/"
         self.context_dir = context_dir
 
+        # Validate context files have correct extension
         if not system_prompts_filename.endswith(".yaml"):
             system_prompts_filename += ".yaml"
         self.system_prompts_filename = system_prompts_filename
-
         if not user_prompts_filename.endswith(".yaml"):
             user_prompts_filename += ".yaml"
         self.user_prompts_filename = user_prompts_filename
 
+        # Init parent class
         super().__init__(file_caching=file_caching)
 
-    def get_chatbot_instructions(
-            self,
-            personality: str,
+    def get_agent_instructions(
+            self, personality: str,
     ) -> str:
-        """Get the chatbot's instructions based on its personality."""
+        """Get the agent's instructions based on its personality."""
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.system_prompts_filename,
             key_name="personalities"
@@ -204,9 +193,9 @@ class ChatbotContextHelper(BaseContextHelper):
             personality: str
     ) -> str:
         """
-        Get and format the instructions for compacting the messages list.
+        Get the instructions for compacting the conversation.
 
-        The chatbot's personality is used to decide which details of the
+        The agent's personality is used to decide which details of the
         conversation are important to retain.
         """
         # Fetch base key
@@ -226,8 +215,8 @@ class ChatbotContextHelper(BaseContextHelper):
         """
         Convert a list of chatbot-user messages into a readable transcript.
 
-        This method is used as part of memory compacting for the ChatbotAssistant,
-        and its output is to be passed on as a user message in the messages list.
+        Used as part of memory compacting in order to convert the messages list
+        into a digestible format by the LLM.
         """
         transcript = ""
         for message in messages:
@@ -251,37 +240,37 @@ class ChatbotContextHelper(BaseContextHelper):
             long_term_memory: str | None = None
     ) -> str:
         """
-        Get the user prompt for the memory manager.
+        Get the user prompt for compacting.
 
         The list of recent conversation messages is transcribed to a
         single string before formatting into the prompt.
 
         Parameters
         ----------
-            recent_conversation: list[dict]
-                A list of recent conversation messages.
-                e.g.,
-                    [
-                        {
-                            "role": "user",
-                            "content": "What is the capital of France?"
-                        },
-                        {
-                            "role": "assistant",
-                            "content": "The capital of France is Paris."
-                        },
-                        ...
-                    ]
-            long_term_memory: str | None
-                Optional long-term memory to include in the user prompt,
-                which may contain key facts about the user and the conversation
-                that should be retained.
-                e.g., "The user's name is John and they like cars."
+        recent_conversation: list[dict]
+            A list of recent conversation messages.
+            e.g.,
+                [
+                    {
+                        "role": "user",
+                        "content": "What is the capital of France?"
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "The capital of France is Paris."
+                    },
+                    ...
+                ]
+        long_term_memory: str | None
+            Optional long-term memory to include in the user prompt,
+            which may contain key facts about the user and the conversation
+            that should be retained.
+            e.g., "The user's name is John and they like cars."
 
         Returns
         -------
-            str
-                The formatted user prompt for the memory manager.
+        str
+            The formatted user prompt for the memory manager.
         """
         outer_key = self.load_and_format_context(
             file_path=self.context_dir + self.user_prompts_filename,
@@ -303,7 +292,7 @@ class ChatbotContextHelper(BaseContextHelper):
             self,
             summary: str
     ) -> str:
-        """Get and format the prompt template summarizing the conversation."""
+        """Get the prompt template summarizing the conversation."""
         summary_template = self.load_and_format_context(
             file_path=self.context_dir + self.system_prompts_filename,
             key_name="conversation summary"

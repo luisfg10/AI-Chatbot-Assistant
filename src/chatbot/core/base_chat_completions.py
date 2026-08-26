@@ -8,12 +8,11 @@ from src.chatbot.tools import tool_registry
 
 class ChatCompletionsBaseAgent:
     """
-    Base class for defining LLM capabilities and interactions.
+    Base class for defining LLM capabilities.
 
     Compatible with OpenAI's chat completions endpoint.
-
-    Includes all API call-related logic, but does not handle abstractions
-    like prompt fetching and memory management.
+    Does not handle abstractions like prompt fetching and
+    memory management.
     """
 
     def __init__(
@@ -28,25 +27,24 @@ class ChatCompletionsBaseAgent:
 
         Parameters
         ----------
-            models: dict
-                A dictionary of model codes to store in the self
-                and use for setting clients. e.g.,
-                    {
-                        "gpt-5.5": {
-                            "base url": "example_url.com",
-                            "api key": "example-api-key"
-                        },
-                        ...
-                    }
-            default_model: str
-                The default model to use. Checks that this model is
-                inside the models dict.
-            max_recusrive_tool_calls: int | None = None
-                Max allowed number of tool calls for the Agent before
-                forcing a response. Optional but recommended for preventing
-                infinite tool call loops, which are unlikely but possible.
-            max_completion_tokens: int | None = None
-                Optional parameter for specifying max tokens.
+        models: dict
+            A dict of model codes to use for setting clients. e.g.,
+                {
+                    "gpt-5.5": {
+                        "base url": "example_url.com",
+                        "api key": "example-api-key"
+                    },
+                    ...
+                }
+        default_model: str
+            The default model to use. Checks that this model is
+            inside the models dict.
+        max_recusrive_tool_calls: int | None = None
+            Max allowed number of tool calls before forcing a response.
+            Optional but recommended for preventing infinite tool call loops, which
+            are unlikely for well-defined tasks but nonetheless possible.
+        max_completion_tokens: int | None = None
+            Optional parameter for specifying max tokens.
         """
         # Resolve max completion tokens
         self.max_completion_tokens = (
@@ -64,9 +62,8 @@ class ChatCompletionsBaseAgent:
             )
         }
 
-        # Save models: assumes it has the correct structure
+        # Save models dict and default model
         self.models = models
-
         if default_model not in self.models:
             default_model = list(self.models.keys())[0]
         self.default_model = default_model
@@ -79,21 +76,21 @@ class ChatCompletionsBaseAgent:
             model_code: str | None = None,
     ) -> None:
         """
-        Set and store an OpenAI client and model code to use.
+        Set an OpenAI client and model code to use.
 
-        This model may be called at any time to update the chatbot's
+        This method may be called at any time to update the chatbot's
         client parameters.
 
         Parameters
         ----------
-            model_code: str | None
-                The code of the LLM model for which to create the client.
-                If not provided, defaults to self.default model.
+        model_code: str | None
+            The code of the LLM model for which to create the client.
+            If not provided, defaults to self.default model.
 
         Returns
         -------
-            None
-                Updates or creates self.client
+        None
+            Updates or creates self.client
         """
         if not model_code:
             model_code = self.default_model
@@ -111,54 +108,51 @@ class ChatCompletionsBaseAgent:
         recursive: bool = False,
         existing_response_messages: list[dict] | None = None,
         tool_limit_reached_prompt: str | None = None
-    ) -> list | None:
+    ) -> list[dict] | None:
         r"""
-        Call the LLM API and return the generated response.
-
-        Returns a list of messages containing the LLM's response.
-        This list will have len 1 for simple answers, but for multi-step
-        answers involving tool calls it'll have a larger length.
-
-        For multi-step answers that require tool calls, calls itself
-        recursively while updating the messages list and while monitoring
-        the number of recursive tool calls being done without answering the
-        user. In order to enforce a max limit of recursive tool calls, whenever
-        the limit is reached the next LLM call eliminates the possibility of
-        tool calling (tools=None) and also adds a context message to the LLM
-        explaining the must answer the user in their next message.
+        Call the LLM API and return its response.
 
         Parameters
         ----------
-            messages: list[dict]
-                A list of messages containing the current conversation history.
-            tools: Optional[list[dict]]
-                An optional list of tools to provide to the LLM for enhanced
-                capabilities.
-            recursive: bool
-                Boolean flag indicating whether the method was called from itself.
-                This is used internally when tool calling to select the correct
-                list of messages to build on the API request.
-            existing_response_messages: list[dict] | None
-                In case it is a recursive call, the current list of messages that
-                will make part of the final return value.
-            tool_limit_reached_prompt: str | None = None
-                Message to send to the LLM in case it exceeds the max recursive
-                tool calls allowed for a single interaction.
-                e.g.,
-                "You have exceeded your tool calls, please respond to the user now."
+        messages: list[dict]
+            A list of messages containing the current context.
+        tools: Optional[list[dict]]
+            An optional list of tools to provide to the LLM for enhanced
+            capabilities.
+        recursive: bool = False
+            Internal parameter.
+            Boolean flag indicating whether the method was called from itself.
+            Used internally when tool-calling to select the correct list of
+            messages to build on the API request.
+        existing_response_messages: list[dict] | None
+            Internal parameter.
+            In case of a recursive call, the current list of messages that
+            will make part of the final return value.
+        tool_limit_reached_prompt: str | None = None
+            Optional message to send to the LLM in case it exceeds the max
+            recursive tool calls allowed for a single interaction.
+            e.g.,
+            "You have exceeded your tool calls, please respond to the user now."
 
         Returns
         -------
-            list
-                The generated list of messages from the LLM's response.
+        list
+            The generated list of messages from the LLM's response.
 
         Notes
         -----
-            * Includes special considerations for certain OpenAI models for
-            which parameter names have changed.
+        The messages list returned will have len 1 for simple answers,
+        and larger lengths for multi-step answers involving, for example,
+        tool calls.
 
-            * Includes several debugging statements. Control whether these are
-            printed to stderr using the env var LOG_LEVEL.
+        For multi-step answers, the method calls itself recursively while
+        updating the messages list and while monitoring the number of recursive
+        tool calls being done without answering the user.
+
+        In order to enforce a max limit of recursive tool calls, whenever
+        the limit is reached the next LLM call eliminates the possibility of
+        tool calling (tools=None) and also adds a context message to the LLM
+        explaining the must answer the user in their next message.
 
         Examples
         --------
@@ -316,21 +310,23 @@ class ChatCompletionsBaseAgent:
         """
         Execute a tool call and return its results.
 
-        Compatible with OpenAI's chat completions endpoint.
+        TODO: This class offers, by design, only general functionality
+        and capabilities around the Chat Completions endpoint. It shouldn't
+        take in directly any project-specific parameters like the tool registry.
 
         Parameters
         ----------
-            tool_calls: list
-                List with the tool calls to be made from the OpenAI
-                chat completions endpoint.
-            tool_registry: dict
-                A dictionary mapping tool names to the actual Python
-                functions, aka tools.
+        tool_calls: list
+            List with the tool calls to be made from the OpenAI
+            chat completions endpoint.
+        tool_registry: dict
+            A dictionary mapping tool names to the actual Python
+            functions, aka tools.
 
         Returns
         -------
-            list
-                A list with the results of each made tool call.
+        list
+            A list with the results of each made tool call.
 
         Examples
         --------
@@ -382,37 +378,37 @@ class ChatCompletionsBaseAgent:
 
         Parameters
         ----------
-            message: ChatCompletionMessage
-                An object from OpenAI's chat completions endpoint
-                indicating to call a tool.
+        message: ChatCompletionMessage
+            An object from OpenAI's chat completions endpoint
+            indicating to call a tool.
 
         Returns
         -------
-            dict
-                A serialized dict to be appended to the messages list.
+        dict
+            A serialized dict to be appended to the messages list.
 
         Examples
         --------
         >>> example = ChatbotContextHelper().serialize_tool_calls_response(
-                message=ChatCompletionMessage(
-                    content=None,
-                    refusal=None,
-                    role='assistant',
-                    annotations=None,
-                    audio=None,
-                    function_call=None,
-                    tool_calls=[
-                        ChatCompletionMessageFunctionToolCall(
-                            id='function-call-6907',
-                            function=Function(
-                                arguments='{}',
-                                name='get_current_date'
-                            ),
-                            type='function'
-                        )
-                    ]
-                )
+            message=ChatCompletionMessage(
+                content=None,
+                refusal=None,
+                role='assistant',
+                annotations=None,
+                audio=None,
+                function_call=None,
+                tool_calls=[
+                    ChatCompletionMessageFunctionToolCall(
+                        id='function-call-6907',
+                        function=Function(
+                            arguments='{}',
+                            name='get_current_date'
+                        ),
+                        type='function'
+                    )
+                ]
             )
+        )
         >>> print(example)
         {
             'role': 'assistant',
