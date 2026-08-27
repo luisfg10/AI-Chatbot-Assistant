@@ -3,11 +3,16 @@ Tool definitions to be used by the AI agent.
 
 Consistent and valid numpy-style docstring documentation
 is mandatory so the tool schema builder parses the docstring
-correctly, otherwise it will raise a ValueError.
+correctly on runtime, otherwise it will raise a ValueError.
 
 Keep each function's docstring informative and concise to improve
-the chances it's called correctly by the LLM. Avoid overly describing
-parameters and return values without need.
+the chances it's called correctly by the LLM.
+
+TODO: Improve web search tool so agent is free to choose whether to
+get a simplified response or the entire metadata, maybe even return all
+useful metadata by default. Sometimes the summary headline returned by
+Tavily doesn't have all of the needed information, like the sources
+from which it was pulled.
 """
 from datetime import date
 
@@ -25,8 +30,7 @@ def evaluate_math_expression(expression: str) -> str:
     Evaluate a math expression and return the result.
 
     Supports int, float, +, -, *, /, ** and parentheses.
-    Certain characters are translated as valid operators,
-    like "x" into "*" for multiplication.
+    "X" is treated as a valid multiplication operator.
     No other operators, functions, or variables are allowed.
 
     Parameters
@@ -48,7 +52,7 @@ def evaluate_math_expression(expression: str) -> str:
 
 def perform_web_search(query: str) -> str:
     """
-    Perform a web search for grounding a user's query.
+    Perform a web search from a given query.
 
     Parameters
     ----------
