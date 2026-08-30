@@ -1,8 +1,9 @@
 """
-Web search capability for the AI agent using Tavily.
+Web search capability for AI agents using Tavily.
 
-This module is built with external provider flexibility in
-mind so they can easily be switched if necessary.
+This module is built using the requests library intentionally
+as opposed to Tavily's own library to provide greater flexibility
+and avoid vendor lock-in.
 """
 import json
 from typing import Any
@@ -20,19 +21,19 @@ def web_search_tool_available(
         provider_config: dict = AppConfig.TAVILY_CONFIG
 ) -> bool:
     """
-    Determine whether the web search tool is available for the agent.
+    Determine if the web search capability is available for use.
 
     Parameters
     ----------
-        provider_config: dict
-            A dictionary containing the external provider's
-            URL and API key. Required keys: "url", "api key".
+    provider_config: dict
+        A dictionary containing the external provider's
+        URL and API key. Required keys: "url", "api key".
 
     Returns
     -------
-        bool
-            True if the provider's parameters are correctly set and
-            the tool can be used, False otherwise.
+    bool
+        True if the provider's parameters are correctly set and
+        the tool can be used, False otherwise.
 
     Examples
     --------
@@ -59,7 +60,7 @@ def web_search_tool_available(
 
 
 # ------------------------------------------------------------------
-# Tavily
+# Tavily Interface
 
 class TavilyClient:
     """Class used for handling Tavily searches."""
@@ -97,40 +98,38 @@ class TavilyClient:
         Perform a web search using Tavily.
 
         Includes optional kwargs that, if not provided or None, aren't
-        sent in the API call. This is done on purpose instead of defining
-        optional parameters by name for easier maintainability in case the
-        endpoint definition ever changes on the provider's side.
+        sent in the API call. Check the provider's docs for more info.
 
         Docs:
         https://docs.tavily.com/documentation/api-reference/endpoint/search
 
         Parameters
         ----------
-            query: str
-                The search query.
+        query: str
+            The search query.
 
-            include_answer: bool = True
-                If True, includes an LLM-generated answer summarizing the
-                results for the query.
-                It's recommended to set this value to True if using within
-                an agent tool, in order to return a simple, short answer.
+        include_answer: bool = True
+            If True, includes an LLM-generated answer summarizing the
+            results for the query.
+            It's recommended to set this value to True if using within
+            an agent tool, in order to return a simple, short answer.
 
-            simplify_response_for_agent: bool = False
-                If True, returns a string with the search results.
-                Otherwise returns a dict, which is the original format of
-                the response content.
+        simplify_response_for_agent: bool = False
+            If True, returns a string with the search results.
+            Otherwise returns a dict, which is the original format of
+            the response content.
 
-            **kwargs
-                Optional kwargs to send to Tavily to further customize
-                the obtained response.
+        **kwargs
+            Optional kwargs to send to Tavily to further customize
+            the obtained response.
 
         Returns
         -------
-            str
-                If simplify_response = True
-            dict
-                If simplify_response = False. i.e., the original response
-                returned by the API.
+        str
+            If simplify_response = True
+        dict
+            If simplify_response = False. i.e., the original response
+            returned by the API.
 
         Examples
         --------
@@ -143,23 +142,23 @@ class TavilyClient:
         )
         >>> print(response)
         {
-        "query": "Tesla NYSE stock price today",
-        "follow_up_questions": null,
-        "answer": "Tesla NYSE stock price today is $393.45, ...",
-        "images": [],
-        "results": [
-            {
-            "url": "https://www.tradingview.com/symbols/NASDAQ-TSLA",
-            "title": "TSLA Stock Price — Tesla Chart - TradingView",
-            "content": "The current price of TSLA is 393.45 USD ...",
-            "score": 0.78194773,
-            "raw_content": null
-            },
-            ...
-            }
-        ],
-        "response_time": 1.17,
-        "request_id": "8f850ab2-6a8e-473a-8385-9e21f23e2968"
+            "query": "Tesla NYSE stock price today",
+            "follow_up_questions": null,
+            "answer": "Tesla NYSE stock price today is $393.45, ...",
+            "images": [],
+            "results": [
+                {
+                "url": "https://www.tradingview.com/symbols/NASDAQ-TSLA",
+                "title": "TSLA Stock Price — Tesla Chart - TradingView",
+                "content": "The current price of TSLA is 393.45 USD ...",
+                "score": 0.78194773,
+                "raw_content": null
+                },
+                ...
+                }
+            ],
+            "response_time": 1.17,
+            "request_id": "8f850ab2-6a8e-473a-8385-9e21f23e2968"
         }
 
         Successful call with simplified response:

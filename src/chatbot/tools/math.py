@@ -1,54 +1,49 @@
 r"""
-Safe arithmetic calculator tool for AI agents.
+Safe arithmetic calculator tool for agents.
 
-Receives a string containing a math operation as input, and
-performs several safety checks to ensure that:
-    * The string is in fact a math expression with numbers and
-    operators
-    * The expression is not overly long and will not result in an
-    overly-expensive computation that might freeze or crash the program
+Receives a string containing a math operation as input, validates
+it is safe to evaluate, and if successful runs it and returns the
+result. The main checks are:
+* The string is in fact a math expression with numbers and
+operators
+* The expression is not overly long and will not result in an
+expensive computation that might freeze or crash the program
 
-=================================================
 Operation Safety
+----------------
+Instead of running string as code, this tool:
 
-    Instead of running string as code, this tool:
+1. Uses Python's built-in `ast` module to parse the string into a tree
+structure that describes its grammar without executing anything.
+For example, the expression "3 * (8 + 1)" gets broken down into a tree:
 
-    1. Uses Python's built-in `ast` module to parse the string into a tree
-    structure that describes its grammar without executing anything.
-    For example, the expression "3 * (8 + 1)" gets broken down into a tree:
+            BinOp(*)
+            /      \\
+            3        BinOp(+)
+                    /      \\
+                    8        1
 
-                BinOp(*)
-                /      \\
-                3        BinOp(+)
-                        /      \\
-                        8        1
+2. Walks the tree node by node, and only allows specific pieces to exist:
+numbers, and the +, -, *, /, ** operators. If any other node type is found
+(function call, variable name, attribute access), the expression is skipped
+and an error is raised.
 
-    2. Walks the tree node by node, and only allows specific pieces to exist:
-    numbers, and the +, -, *, /, ** operators. If any other node type is found
-    (function call, variable name, attribute access), the expression is not
-    evaluated and an error is raised, guaranteeing that only basic arithmetic
-    can be performed.
-
-=================================================
 Configuration Variables
+-----------------------
+Additional guardrails are also set to reject large operations that may
+cause the application to fail, which are:
 
-    Additional guardrails are also in place to reject overly large arithemtic
-    operations that may cause the application to freeze or crash, which are:
-
-    * MAX_EXPRESSION_LENGTH: # of characters allowed in the expression.
-    * MAX_OPERATOR_COUNT
-    * MAX_EXPONENT_MAGNITUDE: Max value for exponents, independent of their base
-    * MAX_DECIMAL_PLACES: # Digits to round off a response to
-    * MAX_EXPONENT_FOR_LARGE_BASE_CHECK: Exponent magnitude considered "large"
-    * MAX_BASE_FOR_LARGE_EXPONENT: In case the exponent is considered "large"
-      per the previous constant, the max value allowed for said exponent's base
+* MAX_EXPRESSION_LENGTH: # of characters allowed in the expression.
+* MAX_OPERATOR_COUNT
+* MAX_EXPONENT_MAGNITUDE: Max value for exponents, independent of their base
+* MAX_DECIMAL_PLACES: # Digits to round off a response to
+* MAX_EXPONENT_FOR_LARGE_BASE_CHECK: Exponent magnitude considered "large"
+* MAX_BASE_FOR_LARGE_EXPONENT: In case the exponent is considered "large"
+  per the previous constant, the max value allowed for said exponent's base
 
 """
-
 import ast
 import operator
-
-Number = int | float
 
 # ------------------------------------------------------------------
 # Config
@@ -66,33 +61,33 @@ MAX_BASE_FOR_LARGE_EXPONENT = 10_000
 
 class CalculatorError(Exception):
     """
-    Catch-all exception used for any problem with the expression.
+    Exception used for math expression problems.
 
     Used for invalid syntax, disallowed operations, or a result that
-    breaks one of the safety limits above.
+    breaks any of the safety limits above.
     """
-
 
 # ------------------------------------------------------------------
 # Allowed Math Operators Whitelist
 
+
 _BINOPS = {
-    ast.Add: operator.add,       # +
-    ast.Sub: operator.sub,       # -
-    ast.Mult: operator.mul,      # *
-    ast.Div: operator.truediv,   # /
-    ast.Pow: operator.pow,       # **
+    ast.Add: operator.add,  # +
+    ast.Sub: operator.sub,  # -
+    ast.Mult: operator.mul,  # *
+    ast.Div: operator.truediv,  # /
+    ast.Pow: operator.pow,  # **
 }
 
 # Unary operators: operators that work on a single value, e.g. "-5" or "+5"
 # (the minus/plus sign directly in front of a number, not between two numbers)
 _UNARYOPS = {
-    ast.UAdd: operator.pos,   # +5 (rare, but valid: "positive 5")
-    ast.USub: operator.neg,   # -5
+    ast.UAdd: operator.pos,  # +5 (rare, but valid: "positive 5")
+    ast.USub: operator.neg,  # -5
 }
 
 # ------------------------------------------------------------------
-# Auxiliary Functions (not agent-facing)
+# Rule-Enforcing Auxiliary Functions
 
 
 def _count_operators(node: ast.AST) -> int:
@@ -109,12 +104,12 @@ def _count_operators(node: ast.AST) -> int:
     return count
 
 
-def _eval_node(node: ast.AST) -> Number:
+def _eval_node(node: ast.AST) -> int | float:
     """
     Recursively evaluate one node of the parsed expression tree.
 
-    If any node type that isn't explicitly handled below is encountered,
-    a CalculatorError is raised instead of executing it.
+    Raises a CalculatorError for any node type outside of those
+    explicitly allowed.
     """
     # Case: the top-level wrapper Python adds when parsing in "eval" mode.
     # `ast.parse(expr, mode="eval")` always returns an `ast.Expression`
@@ -122,10 +117,8 @@ def _eval_node(node: ast.AST) -> Number:
     if isinstance(node, ast.Expression):
         return _eval_node(node.body)
 
-    # Case: a literal number, like `3`, `8`, or `2.5`.
-    # In modern Python, all literal constants (numbers, strings,
-    # True/False, None, etc.) are represented as `ast.Constant`.
-    # Only numeric constants are allowed.
+    # Case: a literal number, like `3`, `8`, or `2.5`,
+    # which are represented as ast.constant
     if isinstance(node, ast.Constant):
         if (
             isinstance(node.value, (int, float))
@@ -136,7 +129,7 @@ def _eval_node(node: ast.AST) -> Number:
             f"Only numeric literals allowed, got: {node.value!r}"
         )
 
-    # Case: a binary operation, like `3 + 4`, `8 * 2`, `10 / 5`, `2 ** 3`.
+    # Case: a binary operation, like `3 + 4`, `8 * 2`, or `10 / 5`.
     # An ast.BinOp node has three parts: `.left` (left side), `.op` (which
     # operator), and `.right` (right side). Evaluate left and right
     # recursively, then apply the operatos
@@ -183,7 +176,7 @@ def _eval_node(node: ast.AST) -> Number:
             )
         return _UNARYOPS[op_type](_eval_node(node.operand))
 
-    # --- Case: anything else.
+    # Reject anything that's not explicitly allowed
     # e.g., function call (`ast.Call`), a variable name (`ast.Name`),
     # attribute access (`ast.Attribute`, e.g. `os.system`), etc.
     raise CalculatorError(
@@ -191,24 +184,28 @@ def _eval_node(node: ast.AST) -> Number:
     )
 
 
-def _format_result(result: Number) -> Number:
-    """Enforce formatting rules for numeric results with decimals."""
-    # Tidy up decimals.
+def _format_result(result: int | float) -> int | float:
+    """
+    Enforce formatting rules for numeric results with decimals.
+
+    If rounding produces a whole number, return that as it's
+    more natural.
+    """
     if isinstance(result, float):
         result = round(result, MAX_DECIMAL_PLACES)
-        # If rounding produced a whole number (e.g. 4.0), return it as a
-        # plain int (4) instead — it reads more naturally in a response.
         if result.is_integer():
             result = int(result)
 
     return result
 
 
-def calculate(expression: str) -> Number:
+def calculate(expression: str) -> int | float:
     """
-    Safely evaluate a basic arithmetic expression and return a number.
+    Safely evaluate an arithmetic expression and return a number.
 
     Supports: + - * / ** and parentheses, with int/float numbers.
+    Translates "X" into the multiplication operator (*),
+    and "^" into exponentiation (**).
 
     Raises CalculatorError if:
       - the input isn't a valid non-empty string,

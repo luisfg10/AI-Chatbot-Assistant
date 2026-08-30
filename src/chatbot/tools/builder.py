@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from docstring_parser import parse as parse_docstring
+from docstring_parser.common import Docstring
 
 
 class DocstringError(ValueError):
@@ -12,28 +13,35 @@ class DocstringError(ValueError):
 
     Raised when a tool function's docstring is missing, incomplete, or
     doesn't match its actual signature.
-
-    Catching this separately from a plain ValueError makes it easy
-    to distinguish bad documentation and fix them.
     """
 
 
 def _validate_docstring(
         fn: Callable[[Any], Any],
         sig: inspect.Signature,
-        parsed_doc: dict
+        parsed_doc: dict | Docstring
 ) -> None:
     """
     Validate a function's docstring is complete and well-formatted.
 
     Checks that a function's docstring is consistent with its actual
     signature, or raises DocstringError with a helpful message otherwise.
-    This is necessary because `docstring_parser` fails *silently* on malformed
+    This is necessary because `docstring_parser` fails silently on malformed
     numpydoc/Google/reST syntax.
+
+    Parameters
+    ----------
+    fn: Callable
+        The function to inspect.
+    sig: inspect.Signature
+        The function's signature, obtained using the inspect library.
+    parsed_doc: dict | Docstring
+        Dict containing the function's parsed docstring as keys,
+        or Docstring object with the docstring parameters as attributes.
     """
     name = fn.__name__
 
-    # Invariant 1: the function must have a short summary line.
+    # Invariant 1: the function must have a 1-line summary
     if not parsed_doc.short_description:
         raise DocstringError(
             f"Function '{name}' has no docstring summary. Add a one-line "
@@ -41,7 +49,7 @@ def _validate_docstring(
         )
 
     # Invariant 2: every parameter in the function's real signature must have a
-    # matching, non-empty entry in the docstring's Parameters section.
+    # matching, non-empty entry in the docstring's Parameters section
     sig_param_names = set(sig.parameters.keys())
     doc_param_names = {p.arg_name for p in parsed_doc.params}
 
@@ -53,8 +61,7 @@ def _validate_docstring(
             "Make sure to document using consistent numpy-style formatting."
         )
 
-    # Invariant 3: A documented parameter that doesn't
-    # actually exist in the function signature
+    # Invariant 3: A documented param that doesn't exist in signature
     extra_in_doc = doc_param_names - sig_param_names
     if extra_in_doc:
         raise DocstringError(
@@ -63,8 +70,7 @@ def _validate_docstring(
             "stale documentation."
         )
 
-    # Invariant 4: every documented parameter must have actual description
-    # text, not just a name with an empty/missing body.
+    # Invariant 4: every documented param must have a description
     empty_descriptions = [
         p.arg_name for p in parsed_doc.params
         if not (p.description or "").strip()
@@ -80,21 +86,42 @@ def build_tools(functions: list) -> tuple[dict, list]:
     """
     Build a tool registry and schema list from a list of functions.
 
-    Uses each function's docstring as description when building the
-    schema, so it's essential it be concise and informative.
+    Reuses each function's docstring as description when building the
+    agent-facing schema, so it's essential for it to be clear and concise.
 
     Parameters
     ----------
-        functions: list
-            A list of functions to be used as tools.
+    functions: list
+        A list of functions to be used as tools.
 
     Returns
     -------
-        registry: dict
-            A dict mapping a function's name to its object.
-        schemas: list[dict]
-            A list containing the schemas for all of the tools
-            to be used.
+    registry: dict
+        A dict mapping a function's name to its object.
+    schemas: list[dict]
+        A list containing the schemas for all of the tools
+        to be used.
+
+    Examples
+    --------
+    >>> from src.chatbot.tools.definitions import get_current_date
+    >>> functions_list = [get_current_date]
+    >>> registry, schema = build_tools(functions_list)
+    >>> print(registry)
+        {'get_current_date': <function get_current_date at 0x000001HJRY>}
+    >>> print(schema)
+        [{
+            'type': 'function',
+            'function': {
+                'name': 'get_current_date',
+                'description': "Get today's date in YYYY-MM-DD format.",
+                'parameters': {
+                    'type': 'object',
+                    'properties': {},
+                    'required': []
+                }
+            }
+        }]
     """
     # Define return objects
     registry = {}
@@ -109,7 +136,7 @@ def build_tools(functions: list) -> tuple[dict, list]:
     }
 
     for fn in functions:
-        # Invariant: object must be a function
+        # Check object is actually a function
         if not isinstance(fn, types.FunctionType):
             raise ValueError(f"Object '{fn}' must be a function.")
 

@@ -1,4 +1,9 @@
-"""Entrypoint for the tools module for the agent."""
+"""
+Entrypoint for the tools module for the agent.
+
+Builds tool registry and tool schema, the two objects necessary
+for enabling agent tool-calling.
+"""
 from src.chatbot.tools.builder import build_tools
 from src.chatbot.tools.definitions import (
     evaluate_math_expression,
