@@ -180,14 +180,14 @@ class TestChatbotAssistant:
         assert chatbot.messages[0]["content"] == original_content
 
     # ------------------------------------------------------------------
-    # chatbot_call
+    # Agent call
 
-    def test_chatbot_call_appends_messages_and_returns_response(
+    def test_agent_call_appends_messages_and_returns_response(
         self,
         chatbot: ChatbotAssistant,
         mocker: Any
     ) -> None:
-        """Test a call appends the user/assistant messages and returns the response text."""
+        """Test a call appends messages and returns the response text."""
         # Mock LLM API call
         mocker.patch.object(
             ChatCompletionsBaseAgent,
@@ -195,12 +195,12 @@ class TestChatbotAssistant:
             return_value=[{"role": "assistant", "content": "Hi there!"}]
         )
 
-        response = chatbot.chatbot_call("Hello")
+        response = chatbot("Hello")
 
         # Check returned response
         assert response == "Hi there!"
 
-        # Check messages live in self
+        # Check both user and system messages were saved
         assert chatbot.messages[-2] == {"role": "user", "content": "Hello"}
         assert chatbot.messages[-1] == {"role": "assistant", "content": "Hi there!"}
 

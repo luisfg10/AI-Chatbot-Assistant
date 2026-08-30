@@ -43,35 +43,36 @@ def mock_agent() -> MagicMock:
 
     Notes
     -----
-        `MagicMock` (from `unittest.mock`, the standard library) creates a
-        fake object that accepts any attribute access or method call and
-        records how it was used, without running any real code.
-        This is different from the `mocker` fixture provided by `pytest-mock`:
-        `mocker.patch(...)` *replaces* an existing attribute/function/class
-        on a real object for the duration of a test, whereas
-        `MagicMock(spec=ChatbotAssistant)` here builds a brand new
-        fake object that stands in for a whole `ChatbotAssistant` instance,
-        so no real agent (and therefore no real `OpenAI` client) ever gets
-        constructed.
+    `MagicMock` (from `unittest.mock`, the standard library) creates a
+    fake object that accepts any attribute access or method call and
+    records how it was used, without running any real code.
+    This is different from the `mocker` fixture provided by `pytest-mock`:
+    `mocker.patch(...)` *replaces* an existing attribute/function/class
+    on a real object for the duration of a test, whereas
+    `MagicMock(spec=ChatbotAssistant)` here builds a brand new
+    fake object that stands in for a whole `ChatbotAssistant` instance,
+    so no real agent (and therefore no real `OpenAI` client) ever gets
+    constructed.
 
-        `spec=ChatbotAssistant` restricts the mock to only the attributes and
-        methods that actually exist on `ChatbotAssistant`. Without `spec`, a
-        typo like `agent.chatbot_cal(...)` would silently succeed and return
-        another `MagicMock` instead of raising an `AttributeError`.
+    `spec=ChatbotAssistant` restricts the mock to only the attributes and
+    methods that actually exist on `ChatbotAssistant`. Without `spec`, a
+    typo like `agent.chatbot_cal(...)` would silently succeed and return
+    another `MagicMock` instead of raising an `AttributeError`.
 
-        Attributes like `models` and `default_model` are set to plain values
-        because the endpoints read them directly. `chatbot_call` is a method,
-        so its behavior is configured via `.return_value` instead: any call
-        to `mock_agent.chatbot_call(...)` in a test returns this canned
-        string, and the call arguments can later be asserted with
-        `mock_agent.chatbot_call.assert_called_once_with(...)`.
+    Attributes like `models` and `default_model` are set to plain values
+    because the endpoints read them directly. `__call__` is a dunder method,
+    so its behavior is configured via `.return_value`: any call
+    to `mock_agent(...)` in a test returns this canned string, and the
+    call arguments can later be asserted with
+    `mock_agent().assert_called_once_with(...)`.
     """
     agent = MagicMock(spec=ChatbotAssistant)
     agent.models = {"gpt-5-mini": {}, "gpt-5.5": {}}
     agent.default_model = "gpt-5-mini"
     agent.supported_personalities = ["friendly", "professional"]
     agent.default_personality = "friendly"
-    agent.chatbot_call.return_value = "Hello, how can I help?"
+    # return_value is a special term to replace __call__ on MagicMock
+    agent.return_value = "Hello, how can I help?"
     return agent
 
 
@@ -281,7 +282,7 @@ class TestChat:
         response = authed_client.post("/api/chat", json={"message": "Hi"})
         assert response.status_code == 200
         assert response.json() == {"response": "Hello, how can I help?"}
-        mock_agent.chatbot_call.assert_called_once_with("Hi")
+        mock_agent.assert_called_once_with("Hi")
 
     def test_chat_missing_message_field_returns_422(
         self, authed_client: TestClient

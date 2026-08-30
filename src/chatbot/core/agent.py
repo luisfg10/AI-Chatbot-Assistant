@@ -160,13 +160,13 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         # Save current personality
         self.current_personality = personality
 
-    def chatbot_call(
+    def __call__(
             self,
             user_message: str,
             tools: dict = tool_schema
     ) -> str:
         """
-        Call chatbot with a user message.
+        Call agent with a user message.
 
         Parameters
         ----------
@@ -179,6 +179,13 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         -------
         str
             The agent's response.
+
+        Examples
+        --------
+        >>> agent = ChatbotAssistant(...)
+        >>> response = agent(user_message="Hi there.")
+        >>> print(response)
+            "General Kenobi."
         """
         # Check recursive tool call limit prompt is saved to self
         if not hasattr(self, "rec_tool_call_lim_prompt"):
