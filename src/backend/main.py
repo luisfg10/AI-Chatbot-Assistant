@@ -193,14 +193,18 @@ async def set_model(
 
     Notes
     -----
-    - `agent_store` already references the in-memory object,
+    `agent_store` already references the in-memory object,
     so the update on the agent instance suffices.
-    - TODO: Make more robust so it fails gracefully (not a generic 500)
-    in case an invalid model name is provided.
-
     """
-    agent.set_client(body["model"])
-    return {"ok": True}
+    model = body.get("model")
+    try:
+        agent.set_client(model)
+        return {"ok": True}
+    except KeyError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Provided model '{model}' not found."
+        ) from None
 
 
 @router.post("/config/personality")

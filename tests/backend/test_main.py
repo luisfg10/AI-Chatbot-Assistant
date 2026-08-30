@@ -308,21 +308,25 @@ class TestConfigModel:
         assert response.json() == {"ok": True}
         mock_agent.set_client.assert_called_once_with("gpt-5.5")
 
-    def test_set_model_invalid_model_returns_500(
-        self, mock_agent: MagicMock
+    def test_set_model_invalid_model_returns_400(
+        self,
+        authed_client: TestClient,
+        mock_agent: MagicMock
     ) -> None:
-        """Test an unknown model code surfaces as a server error."""
+        """Test an unknown model code surfaces as a 400 Bad Request."""
+        # Mimick KeyError on agent's side
         mock_agent.set_client.side_effect = KeyError("bad-model")
-        app.dependency_overrides[get_agent] = lambda: mock_agent
-        try:
-            client = TestClient(app, raise_server_exceptions=False)
-            response = client.post(
-                "/api/config/model",
-                json={"model": "bad-model"}
-            )
-            assert response.status_code == 500
-        finally:
-            app.dependency_overrides.clear()
+
+        # Call endpoint
+        response = authed_client.post(
+            "/api/config/model",
+            json={"model": "unexistent-model"}
+        )
+
+        # Validate andpoint response
+        mock_agent.set_client.assert_called_once_with("unexistent-model")
+        assert response.status_code == 400
+        assert "not found" in response.json().get("detail")
 
 
 class TestConfigPersonality:

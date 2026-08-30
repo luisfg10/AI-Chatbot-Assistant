@@ -92,10 +92,12 @@ class ChatCompletionsBaseAgent:
         None
             Updates or creates self.client
         """
-        if not model_code:
+        if model_code is None:
             model_code = self.default_model
         self.model_code = model_code
+        # raises KeyError if model doesn't exist
         model_data = self.models[model_code]
+        # Set client
         self.client = OpenAI(
             base_url=model_data["base url"],
             api_key=model_data["api key"]
