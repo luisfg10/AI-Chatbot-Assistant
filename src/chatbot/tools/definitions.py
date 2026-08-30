@@ -30,7 +30,6 @@ def evaluate_math_expression(expression: str) -> str:
     Evaluate a math expression and return the result.
 
     Supports int, float, +, -, *, /, ** and parentheses.
-    "X" is treated as a valid multiplication operator.
     No other operators, functions, or variables are allowed.
 
     Parameters
