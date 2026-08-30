@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [v0.0.7] (WIP)  
 * Changed `ChatbotAssistant.chatbot_call()` for the dunder method `__call__()` for more natural and concise syntax.  
 * Improved code documentation and redaction to make it more clear and concise.  
+* Added graceful error handling on `api/config/model` endpoint when an invalid model is provided.  
 
 ## [v0.0.6]  
 * Added non-exhaustive unit tests for key parts of the backend application: agent tools, agent core functionality (context fetching, chat completions endpoint, memory), and the backend app endpoints.  
