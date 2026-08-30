@@ -172,7 +172,7 @@ async def chat(
     ChatResponse
         The agent's response message.
     """
-    response = agent.chatbot_call(chat_request.message)
+    response = agent(chat_request.message)
     return ChatResponse(response=response)
 
 
