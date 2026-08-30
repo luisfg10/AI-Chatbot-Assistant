@@ -1,7 +1,8 @@
 # AI Chatbot Assistant  
-This learning project consists of an AI chatbot that can have conversations with users and help them with different tasks, much like the assistants offered by OpenAI (ChatGPT) and Anthropic (Claude).  
-The main challenge here is to build a fully-functional chatbot with memory, tools and other advanced capabilities from scratch and without relying on agentic AI frameworks like LangGraph or OpenAI Agents SDK to make the work easier.
 
+This project consists of an AI agent served on a graphical user interface that's able to have conversations with users and execute tasks on their behalf, like searching the web or performing math calculations.  
+
+The project does not make use of highly-abstracted agentic frameworks to facilitate tasks like tool use and memory management: the whole point of the exercise is building these capabilities from scratch.  
 
 ## Table of Contents
 - [1. Project Structure](#1-project-structure)  
@@ -14,7 +15,7 @@ The main challenge here is to build a fully-functional chatbot with memory, tool
 - [5. Future Versions](#5-future-versions)  
 
 ## 1. Project Structure
-The project was structured in a modular way and each core functionality of the chatbot and webpage were written to be as customizable and extensible as possible, particularly the chatbot's prompt logic.
+The project was structured in a modular way and each core functionality of the chatbot and webpage were written to be as customizable and extensible as possible.  
 
 ```
 .
@@ -73,13 +74,11 @@ The project was structured in a modular way and each core functionality of the c
             └── test_web_search_tool.py
 ```
 
-Local and generated artifacts such as `.venv`, `.pytest_cache`, `.ruff_cache`, `__pycache__`, and `.env` are intentionally omitted from the tree above.
-
-### 1.1 Application Configuration  
-The app's configuration is managed within the `config` directory. The `app_config.py` file contains the main application configuration logic, which loads settings from environment variables and the `llm_config.json` file. The `llm_config.json` file defines the available LLM providers and models that the chatbot can use, along with their respective configurations. Environment variables may override configurations specified in the JSON file, allowing for dynamic adjustments without modifying the codebase.
+### 1.1 App Configuration  
+The app's configuration is managed within the `config` directory. The `app_config.py` file contains the main application configuration logic, which loads settings from environment variables and the `llm_config.json` file. The `llm_config.json` file defines the available LLM providers and models that the chatbot can use, along with their respective configurations.  
 
 ## 2. Running the Project  
-This project uses `uv` from Astral as dependency manager and build tool. You can build and run the project on your machine either from a Docker container or locally with a virtual environment following the instructions below.
+This project uses Astral's `uv` as dependency manager and build tool. You can build and run the project on your machine either from a Docker container or locally with a virtual environment following the instructions below.  
 
 ## 2.1 Running with Docker for Development  
 This alternative builds a Docker image including the project's `dev` dependencies and current directory mounting into the container, also providing an interactive terminal for development purposes.
@@ -115,9 +114,9 @@ docker run --rm -p 8000:8000 ai-chatbot-assistant:latest
 
 1. Download and install `uv` into your machine by following [the instructions](https://docs.astral.sh/uv/#installation) in their official page
 
-2. Install python **3.13.0** in your machine. You can leverage `uv` to do this by running the following command in your terminal:
+2. Install python **3.14** in your machine. You can leverage `uv` to do this by running the following command in your terminal:
 ```bash
-uv python install 3.13.0
+uv python install 3.14
 ```
 
 2. Follow the next steps to set up the virtual environment for the project:
@@ -130,7 +129,7 @@ cd AI-Chatbot-Assistant
 uv init
 
 # Pin python version to the project (or pin the interpreter some other way if you prefer)
-uv python pin 3.13.0
+uv python pin 3.14
 
 # Create virtual environment
 uv venv
@@ -148,16 +147,15 @@ uv add pandas
 # Run the project
 uv run main.py
 ```
-The application will start and run on `http://localhost:8000`.
-
-To stop the server, press `Ctrl+C` in the terminal.
+The application will start and run on `http://localhost:8000`. To stop the server, press `Ctrl+C` in the terminal.
 
 ## 3. How to Navigate the User Interface  
-**Note**: This project is currently in early stages and this section will be expanded once a stable version of the UI is implemented. For now, the advice is to run this project by yourself and explore the different features available in the UI, as it's also designed to be intuitive and user-friendly.
+**Note**: This section will be provided with further detail in the future.    
 
 
 ## 4. Coding Standards  
-This project uses `ruff` for linting (and formatting if you wish), and it is included as a dev dependency in the `pyproject.toml` file. You can run it with the following command:
+This project uses `ruff` for linting and ensuring good coding standards are upheld, and it is included as a dev dependency in the `pyproject.toml` file. You can run it with the following command:
+
 ```bash
 # Linting
 uv run ruff check .
@@ -165,3 +163,11 @@ uv run ruff check .
 # Formatting
 uv run ruff format .
 ```
+
+The project also has a test suite on the `tests\` directory for ensuring that the app works correctly after changes. You can run this using:  
+
+```bash
+uv run pytest
+```
+
+Finally, the project also has a CI pipeline that runs as a GitHub action on each pull request. This pipeline checks both the test suite and ruff linters pass before allowing PRs to be merged.  
