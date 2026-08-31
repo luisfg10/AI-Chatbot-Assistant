@@ -3,7 +3,7 @@ from loguru import logger
 from config import AppConfig
 from src.chatbot.core.base_chat_completions import ChatCompletionsBaseAgent
 from src.chatbot.core.context import ChatbotContextHelper
-from src.chatbot.tools import tool_schema
+from src.chatbot.tools import tool_registry, tool_schema
 
 
 class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
@@ -97,6 +97,9 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         # Init personality
         self.set_personality()
 
+        # Set tools on startup
+        self.set_tools()
+
     def set_personality(
             self,
             personality: str | None = None
@@ -160,10 +163,76 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         # Save current personality
         self.current_personality = personality
 
+    def set_tools(
+            self,
+            tool_schema: list[dict] = tool_schema,
+            tool_registry: dict[str, callable] = tool_registry,
+            tool_names: list[str] = None
+    ) -> None:
+        """
+        Set the tools available for LLM use at any given time.
+
+        Parameters
+        ----------
+        tool_schema: list[dict]
+            Dict containing the tools available for the LLM and a description
+            of their signature. This object is provided to the LLM as context
+            so it knows what tools it can call when solving a given user query.
+        tool_registry: dict[str | callable]
+            Internal dict mapping function names to their actual objects
+            used to execute tools on the agent's behalf.
+        tool_names: list[str]
+            Optional list of tool names to use.
+            Overrides tool_schema and tool_registry.
+
+        Returns
+        -------
+        None
+            Tools are saved to the self.
+
+        Notes
+        -----
+        tool_schema and tool_registry are used internally based on all
+        available tools on src/chatbot/tools. tool_names, on the other hand,
+        is meant to give the user the flexibility to specify which tools
+        they want to give the agent access to.
+
+        Examples
+        --------
+        >>> agent = ChatbotAssistant(...)
+        >>> agent.set_tools(
+            tool_schema=[
+                {
+                    'type': 'function',
+                    'function': {
+                        'name': 'get_current_date',
+                        'description': 'Get today's date in YYYY-MM-DD.',
+                        'parameters': {
+                            'type': 'object',
+                            'properties': {},
+                            'required': []
+                        }
+                    }
+                }
+            ],
+            tool_registry: {"get_current_date": get_current_date}
+        )
+        """
+        if tool_names:
+            tool_schema = [
+                item for item in tool_schema
+                if item["function"]["name"] in tool_names
+            ]
+            tool_registry = {
+                k: v for k, v in tool_registry.items()
+                if k in tool_names
+            }
+        self.tool_schema = tool_schema
+        self.tool_registry = tool_registry
+
     def __call__(
             self,
-            user_message: str,
-            tools: dict = tool_schema
+            user_message: str
     ) -> str:
         """
         Call agent with a user message.
@@ -172,8 +241,6 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         ----------
         user_message: str
             ...
-        tools: dict
-            Dictionary containing the tools available for the LLM.
 
         Returns
         -------
@@ -183,7 +250,7 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         Examples
         --------
         >>> agent = ChatbotAssistant(...)
-        >>> response = agent(user_message="Hi there.")
+        >>> response = agent(user_message="Hello there.")
         >>> print(response)
             "General Kenobi."
         """
@@ -203,7 +270,8 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         new_messages = ChatCompletionsBaseAgent.llm_api_call(
             self,
             messages=self.messages,
-            tools=tools,
+            tool_schema=self.tool_schema,
+            tool_registry=self.tool_registry,
             tool_limit_reached_prompt=self.rec_tool_call_lim_prompt
         )
 

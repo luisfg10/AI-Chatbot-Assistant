@@ -3,8 +3,6 @@ import json
 from loguru import logger
 from openai import OpenAI
 
-from src.chatbot.tools import tool_registry
-
 
 class ChatCompletionsBaseAgent:
     """
@@ -20,7 +18,7 @@ class ChatCompletionsBaseAgent:
             models: dict[str, dict],
             default_model: str,
             max_recursive_tool_calls: int | None = None,
-            max_completion_tokens: int | None = None,
+            max_completion_tokens: int | None = None
     ) -> None:
         """
         Initialize the instance for the class.
@@ -105,8 +103,10 @@ class ChatCompletionsBaseAgent:
 
     def llm_api_call(
         self,
+        *,
         messages: list[dict],
-        tools: list[dict] | None = None,
+        tool_schema: list[dict] | None = None,
+        tool_registry: dict[str, callable] | None = None,
         recursive: bool = False,
         existing_response_messages: list[dict] | None = None,
         tool_limit_reached_prompt: str | None = None
@@ -118,9 +118,12 @@ class ChatCompletionsBaseAgent:
         ----------
         messages: list[dict]
             A list of messages containing the current context.
-        tools: Optional[list[dict]]
+        tool_schema: [list[dict]] | None
             An optional list of tools to provide to the LLM for enhanced
             capabilities.
+        tool_registry: dict[str, callable]
+            Internal dict mapping function names to their actual objects
+            used to execute tools on the agent's behalf.
         recursive: bool = False
             Internal parameter.
             Boolean flag indicating whether the method was called from itself.
@@ -153,7 +156,7 @@ class ChatCompletionsBaseAgent:
 
         In order to enforce a max limit of recursive tool calls, whenever
         the limit is reached the next LLM call eliminates the possibility of
-        tool calling (tools=None) and also adds a context message to the LLM
+        tool calling (tool_schema=None) and also adds a context message to the LLM
         explaining the must answer the user in their next message.
 
         Examples
@@ -169,7 +172,7 @@ class ChatCompletionsBaseAgent:
                         "content": "What's today's date?"
                     }
                 ],
-                tools=[
+                tool_schema=[
                     {
                         'type': 'function',
                         'function': {
@@ -230,8 +233,8 @@ class ChatCompletionsBaseAgent:
             else:
                 param_name = "max_tokens"
             params[param_name] = self.max_completion_tokens
-        if isinstance(tools, list) and len(tools) > 0:
-            params["tools"] = tools
+        if isinstance(tool_schema, list) and len(tool_schema) > 0:
+            params["tools"] = tool_schema
 
         # ------------------------------------------------------------------
         # Make call, parse and return response
@@ -268,7 +271,11 @@ class ChatCompletionsBaseAgent:
             choice.message.content = None
 
             new_messages = [self.serialize_chat_completions_response(choice.message)]
-            new_messages.extend(self.llm_tool_call(choice.message.tool_calls))
+            new_messages.extend(self.llm_tool_call(
+                tool_calls=choice.message.tool_calls,
+                tool_registry=tool_registry
+                )
+            )
 
             response_messages.extend(new_messages)
 
@@ -278,12 +285,13 @@ class ChatCompletionsBaseAgent:
             if self.recursive_tool_calls["current"] < self.recursive_tool_calls["max"]:
                 return self.llm_api_call(
                     messages=next_messages,
-                    tools=tools,
+                    tool_schema=tool_schema,
                     recursive=True,
                     existing_response_messages=response_messages,
                     tool_limit_reached_prompt=tool_limit_reached_prompt
                 )
-            else:  # tool calling exceeded: demand response next and take away tools
+            # tool calling exceeded: demand response next and take away tool_schema
+            else:
                 if (
                     not isinstance(tool_limit_reached_prompt, str)
                     or len(tool_limit_reached_prompt) == 0
@@ -298,7 +306,7 @@ class ChatCompletionsBaseAgent:
                 }]
                 return self.llm_api_call(
                     messages=next_messages,
-                    tools=None,
+                    tool_schema=None,
                     recursive=True,
                     existing_response_messages=response_messages,
                     tool_limit_reached_prompt=tool_limit_reached_prompt
@@ -306,15 +314,12 @@ class ChatCompletionsBaseAgent:
 
     @staticmethod
     def llm_tool_call(
-            tool_calls: list,
-            tool_registry: dict[str, callable] = tool_registry
+        *,
+        tool_calls: list,
+        tool_registry: dict[str, callable]
     ) -> list:
         """
         Execute a tool call and return its results.
-
-        TODO: This class offers, by design, only general functionality
-        and capabilities around the Chat Completions endpoint. It shouldn't
-        take in directly any project-specific parameters like the tool registry.
 
         Parameters
         ----------
@@ -342,7 +347,10 @@ class ChatCompletionsBaseAgent:
                     ),
                     type='function'),
                 ...
-            ]
+            ],
+            {
+                "get_current_date": get_current_date
+            }
             )
         >>> print(tool_results)
         [

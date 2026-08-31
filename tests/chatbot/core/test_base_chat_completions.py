@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from src.chatbot.core.base_chat_completions import ChatCompletionsBaseAgent
+from src.chatbot.tools.definitions import get_current_date
 
 
 class TestChatCompletionsBaseAgent:
@@ -207,7 +208,10 @@ class TestChatCompletionsBaseAgent:
         tool_call = make_tool_call("get_current_date")
 
         # Execute fake tool call (doesn't involve LLM)
-        result = ChatCompletionsBaseAgent.llm_tool_call([tool_call])
+        result = ChatCompletionsBaseAgent.llm_tool_call(
+            tool_calls=[tool_call],
+            tool_registry={"get_current_date": get_current_date}
+        )
 
         # Validate the tool call results' structure
         assert result[0]["role"] == "tool"
@@ -283,7 +287,10 @@ class TestChatCompletionsBaseAgent:
         # Call patched method to get fake response
         response = agent.llm_api_call(
             messages=[{"role": "user", "content": "What is today's date?"}],
-            tools=[{"type": "function", "function": {"name": "get_current_date"}}]
+            tool_schema=[{
+                "type": "function",
+                "function": {"name": "get_current_date"}
+            }]
         )
 
         # Check messages list contains two calls, one of them a tool call
