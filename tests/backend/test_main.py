@@ -71,6 +71,11 @@ def mock_agent() -> MagicMock:
     agent.default_model = "gpt-5-mini"
     agent.supported_personalities = ["friendly", "professional"]
     agent.default_personality = "friendly"
+    agent.available_tools = [
+        "evaluate_math_expression",
+        "get_current_date"
+    ]
+    agent.tool_registry = {"evaluate_math_expression": MagicMock()}
     # return_value is a special term to replace __call__ on MagicMock
     agent.return_value = "Hello, how can I help?"
     return agent
@@ -183,10 +188,12 @@ class TestAuthRequired:
         [
             ("get", "/api/models", None),
             ("get", "/api/personalities", None),
+            ("get", "/api/tools", None),
             ("post", "/api/reset", None),
             ("post", "/api/chat", {"message": "Hi"}),
             ("post", "/api/config/model", {"model": "gpt-5.5"}),
             ("post", "/api/config/personality", {"personality": "professional"}),
+            ("post", "/api/config/tools", {"tool_names": ["get_current_date"]}),
         ],
     )
     def test_missing_cookie_returns_401(
@@ -250,6 +257,23 @@ class TestGetPersonalities:
         assert response.json() == {
             "personalities": ["friendly", "professional"],
             "default_personality": "friendly",
+        }
+
+
+class TestGetTools:
+    """Test the `/api/tools` endpoint."""
+
+    def test_returns_available_and_selected_tools(
+            self,
+            authed_client: TestClient,
+            mock_agent: MagicMock
+    ) -> None:
+        """Test the response reflects the agent's available and selected tools."""
+        response = authed_client.get("/api/tools")
+        assert response.status_code == 200
+        assert response.json() == {  # Should match the "mock_agent" fixture's data
+            "tools": mock_agent.available_tools,
+            "selected_tools": list(mock_agent.tool_registry.keys()),
         }
 
 
@@ -344,3 +368,32 @@ class TestConfigPersonality:
         )
         assert response.json() == {"ok": True}
         mock_agent.set_personality.assert_called_once_with("professional")
+
+
+class TestConfigTools:
+    """Test the `/api/config/tools` endpoint."""
+
+    def test_set_tools_calls_agent_with_tool_names(
+        self,
+        authed_client: TestClient,
+        mock_agent: MagicMock
+    ) -> None:
+        """Test endpoint delegates the requested tool names to `agent.set_tools`."""
+        response = authed_client.post(
+            "/api/config/tools",
+            json={"tool_names": ["get_current_date"]}
+        )
+        assert response.json() == {"ok": True}
+        mock_agent.set_tools.assert_called_once_with(
+            tool_names=["get_current_date"]
+        )
+
+    def test_set_tools_missing_field_defaults_to_empty_list(
+        self,
+        authed_client: TestClient,
+        mock_agent: MagicMock
+    ) -> None:
+        """Test a missing `tool_names` field disables all tools instead of erroring."""
+        response = authed_client.post("/api/config/tools", json={})
+        assert response.json() == {"ok": True}
+        mock_agent.set_tools.assert_called_once_with(tool_names=[])
