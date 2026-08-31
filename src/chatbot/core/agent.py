@@ -218,7 +218,10 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
             tool_registry: {"get_current_date": get_current_date}
         )
         """
-        if tool_names:
+        # Track full available tool names regardless of filtering
+        self.available_tools = [item["function"]["name"] for item in tool_schema]
+
+        if tool_names is not None:
             tool_schema = [
                 item for item in tool_schema
                 if item["function"]["name"] in tool_names

@@ -3,6 +3,7 @@ let selectedModel = "";
 let selectedPersonality = "";
 let isLoading = false;
 let messages = [];
+let toolsState = []; // [{ name, checked, deleted }]
 
 // DOM Elements
 const chatPanel = document.getElementById("chatPanel");
@@ -11,6 +12,9 @@ const sendButton = document.getElementById("sendButton");
 const modelSelect = document.getElementById("modelSelect");
 const personalitySelect = document.getElementById("personalitySelect");
 const clearMemoryButton = document.getElementById("clearMemoryButton");
+const toolsDropdown = document.getElementById("toolsDropdown");
+const toolsDropdownButton = document.getElementById("toolsDropdownButton");
+const toolsDropdownPanel = document.getElementById("toolsDropdownPanel");
 
 // Marked.js configuration for markdown rendering
 marked.setOptions({
@@ -25,6 +29,7 @@ marked.setOptions({
 document.addEventListener("DOMContentLoaded", async () => {
     await initializeModels();
     await initializePersonalities();
+    await initializeTools();
     await setDefaultModelAndPersonality();
     setupEventListeners();
 });
@@ -98,6 +103,22 @@ async function initializePersonalities() {
         populateDropdown(personalitySelect, data.personalities, selectedPersonality);
     } catch (error) {
         showErrorMessage("Failed to load personalities");
+    }
+}
+
+async function initializeTools() {
+    try {
+        const data = await fetchAPI("/tools");
+        toolsState = data.tools.map((name) => ({
+            name,
+            checked: data.selected_tools.includes(name),
+            deleted: false,
+        }));
+        renderToolsPanel();
+        updateToolsButtonLabel();
+    } catch (error) {
+        toolsDropdownButton.textContent = "Unavailable";
+        showErrorMessage("Failed to load tools");
     }
 }
 
@@ -266,6 +287,86 @@ function populateDropdown(selectElement, items, selectedValue) {
     });
 }
 
+function renderToolsPanel() {
+    toolsDropdownPanel.innerHTML = "";
+    const visibleTools = toolsState.filter((tool) => !tool.deleted);
+
+    if (visibleTools.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "tools-empty-state";
+        emptyState.textContent = "No tools available.";
+        toolsDropdownPanel.appendChild(emptyState);
+        return;
+    }
+
+    visibleTools.forEach((tool) => {
+        const item = document.createElement("div");
+        item.className = "tool-item";
+
+        const label = document.createElement("label");
+        label.className = "tool-item-label";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "tool-checkbox";
+        checkbox.checked = tool.checked;
+        checkbox.addEventListener("change", () => {
+            tool.checked = checkbox.checked;
+            updateToolsButtonLabel();
+            syncTools();
+        });
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "tool-item-name";
+        nameSpan.textContent = tool.name;
+
+        label.appendChild(checkbox);
+        label.appendChild(nameSpan);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "tool-delete-button";
+        deleteButton.setAttribute("aria-label", `Remove ${tool.name} from list`);
+        deleteButton.textContent = "\u00D7";
+        deleteButton.addEventListener("click", () => {
+            tool.deleted = true;
+            renderToolsPanel();
+            updateToolsButtonLabel();
+            syncTools();
+        });
+
+        item.appendChild(label);
+        item.appendChild(deleteButton);
+        toolsDropdownPanel.appendChild(item);
+    });
+}
+
+function updateToolsButtonLabel() {
+    const visibleTools = toolsState.filter((tool) => !tool.deleted);
+    const selectedCount = visibleTools.filter((tool) => tool.checked).length;
+    toolsDropdownButton.textContent = visibleTools.length === 0
+        ? "No tools"
+        : `${selectedCount} of ${visibleTools.length} selected`;
+}
+
+async function syncTools() {
+    const toolNames = toolsState
+        .filter((tool) => tool.checked && !tool.deleted)
+        .map((tool) => tool.name);
+    try {
+        await fetchAPI("/config/tools", "POST", { tool_names: toolNames });
+    } catch (error) {
+        showErrorMessage(`Failed to update tools: ${error.message}`);
+    }
+}
+
+function toggleToolsPanel(forceClose = false) {
+    const isOpen = !toolsDropdownPanel.classList.contains("hidden");
+    const shouldOpen = forceClose ? false : !isOpen;
+    toolsDropdownPanel.classList.toggle("hidden", !shouldOpen);
+    toolsDropdownButton.setAttribute("aria-expanded", String(shouldOpen));
+}
+
 // ============================================================================
 // Event Listeners
 // ============================================================================
@@ -316,4 +417,17 @@ function setupEventListeners() {
 
     // Clear memory button
     clearMemoryButton.addEventListener("click", clearMemory);
+
+    // Tools dropdown toggle
+    toolsDropdownButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleToolsPanel();
+    });
+
+    // Close tools dropdown when clicking outside of it
+    document.addEventListener("click", (event) => {
+        if (!toolsDropdown.contains(event.target)) {
+            toggleToolsPanel(true);
+        }
+    });
 }

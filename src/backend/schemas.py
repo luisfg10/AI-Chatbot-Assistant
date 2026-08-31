@@ -14,6 +14,12 @@ class AvailablePersonalitiesResponse(BaseModel):
     default_personality: str
 
 
+class AvailableToolsResponse(BaseModel):
+    """Schema for response containing available and selected agent tools."""
+    tools: list[str]
+    selected_tools: list[str]
+
+
 class ChatRequest(BaseModel):
     """Schema for incoming chat messages from the frontend."""
     message: str

@@ -180,6 +180,53 @@ class TestChatbotAssistant:
         assert chatbot.messages[0]["content"] == original_content
 
     # ------------------------------------------------------------------
+    # set_tools
+
+    def test_set_tools_default_includes_all_available_tools(
+        self,
+        chatbot: ChatbotAssistant
+    ) -> None:
+        """Test init sets all registered tools available by default."""
+        assert set(
+            chatbot.tool_registry.keys()) == set(chatbot.available_tools)
+        assert len(chatbot.tool_schema) == len(chatbot.available_tools)
+
+    def test_set_tools_with_tool_names_filters_schema_and_registry(
+        self,
+        chatbot: ChatbotAssistant
+    ) -> None:
+        """Test `tool_names` restricts the active tool schema and registry."""
+        tool_name = chatbot.available_tools[0]
+
+        chatbot.set_tools(tool_names=[tool_name])
+
+        assert list(chatbot.tool_registry.keys()) == [tool_name]
+        assert [item["function"]["name"] for item in chatbot.tool_schema] == [tool_name]
+        # available_tools keeps tracking the full set regardless of filtering
+        assert len(chatbot.available_tools) >= 1
+
+    def test_set_tools_empty_list_disables_all_tools(
+        self,
+        chatbot: ChatbotAssistant
+    ) -> None:
+        """Test an explicit empty `tool_names` list disables every tool."""
+        chatbot.set_tools(tool_names=[])
+
+        assert chatbot.tool_registry == {}
+        assert chatbot.tool_schema == []
+        assert len(chatbot.available_tools) > 0
+
+    def test_set_tools_unknown_tool_name_ignored(
+        self,
+        chatbot: ChatbotAssistant
+    ) -> None:
+        """Test a name not present in the registry results in no active tools."""
+        chatbot.set_tools(tool_names=["not_a_real_tool"])
+
+        assert chatbot.tool_registry == {}
+        assert chatbot.tool_schema == []
+
+    # ------------------------------------------------------------------
     # Agent call
 
     def test_agent_call_appends_messages_and_returns_response(

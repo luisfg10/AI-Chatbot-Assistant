@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from src.backend.schemas import (
     AvailableModelsResponse,
     AvailablePersonalitiesResponse,
+    AvailableToolsResponse,
     ChatRequest,
     ChatResponse,
 )
@@ -136,6 +137,29 @@ async def get_personalities(
     )
 
 
+@router.get("/tools")
+async def get_tools(
+    agent: ChatbotAssistant = Depends(get_agent)
+) -> AvailableToolsResponse:
+    """
+    Get the list of all available tools and the ones currently selected.
+
+    Parameters
+    ----------
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
+
+    Returns
+    -------
+    AvailableToolsResponse
+        List of all available tool names and the currently selected ones.
+    """
+    return AvailableToolsResponse(
+        tools=agent.available_tools,
+        selected_tools=list(agent.tool_registry.keys())
+    )
+
+
 @router.post("/reset")
 async def reset_memory(
     agent: ChatbotAssistant = Depends(get_agent)
@@ -223,6 +247,25 @@ async def set_personality(
         The chatbot agent instance for the current session.
     """
     agent.set_personality(body["personality"])
+    return {"ok": True}
+
+
+@router.post("/config/tools")
+async def set_tools(
+    body: dict,
+    agent: ChatbotAssistant = Depends(get_agent)
+) -> dict:
+    """
+    Update the tools available to the agent.
+
+    Parameters
+    ----------
+    body : dict
+        The request body containing the list of tool names to enable.
+    agent : ChatbotAssistant
+        The chatbot agent instance for the current session.
+    """
+    agent.set_tools(tool_names=body.get("tool_names", []))
     return {"ok": True}
 
 
