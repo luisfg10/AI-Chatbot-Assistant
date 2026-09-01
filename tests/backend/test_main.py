@@ -18,19 +18,19 @@ def _clear_agent_store() -> Any:
 
     Notes
     -----
-        `agent_store` is a plain module-level dict in `src.backend.main`.
-        Because the `app` object (and therefore this dict) is imported once
-        and reused for the whole test session, any session entries left behind
-        by one test would otherwise still be visible to the next test.
+    `agent_store` is a plain module-level dict in `src.backend.main`.
+    Because the `app` object (and therefore this dict) is imported once
+    and reused for the whole test session, any session entries left behind
+    by one test would otherwise still be visible to the next test.
 
-        The clear after `yield` runs as teardown, after the test body has
-        finished, so the next test starts from an empty store even if the
-        current test failed partway through (pytest still runs code after
-        `yield` on failure, similar to a `finally` block).
+    The clear after `yield` runs as teardown, after the test body has
+    finished, so the next test starts from an empty store even if the
+    current test failed partway through (pytest still runs code after
+    `yield` on failure, similar to a `finally` block).
 
-        `yield` is what turns this into a "setup/teardown" fixture: code before
-        `yield` runs before the test, the test then runs, and code after `yield`
-        runs once the test is done, regardless of its result.
+    `yield` is what turns this into a "setup/teardown" fixture: code before
+    `yield` runs before the test, the test then runs, and code after `yield`
+    runs once the test is done, regardless of its result.
     """
     yield
     agent_store.clear()
