@@ -2,9 +2,11 @@
 All notable changes to this project will be documented in this file.  
 
 ## [v0.0.7] (WIP)  
+* Allow user to specify which tools are allowed for calling from the UI. All tools are selected by default, and on each call they can be selected / deselected /deleted. Deselected tools can be selected again and viceversa, but deleted tools require restarting on a new session to bring them back.  
 * Changed `ChatbotAssistant.chatbot_call()` for the dunder method `__call__()` for more natural and concise syntax.  
 * Improved code documentation and redaction to make it more clear and concise.  
-* Added graceful error handling on `api/config/model` endpoint when an invalid model is provided.  
+* Added graceful error handling on `api/config/model` endpoint when an invalid model code is provided.  
+* Added an optional pre-push hook that mimics the logic on the CI pipeline.  
 
 ## [v0.0.6]  
 * Added non-exhaustive unit tests for key parts of the backend application: agent tools, agent core functionality (context fetching, chat completions endpoint, memory), and the backend app endpoints.  

@@ -159,9 +159,6 @@ This project uses `ruff` for linting and ensuring good coding standards are uphe
 ```bash
 # Linting
 uv run ruff check .
-
-# Formatting
-uv run ruff format .
 ```
 
 The project also has a test suite on the `tests\` directory for ensuring that the app works correctly after changes. You can run this using:  
@@ -170,4 +167,8 @@ The project also has a test suite on the `tests\` directory for ensuring that th
 uv run pytest
 ```
 
-Finally, the project also has a CI pipeline that runs as a GitHub action on each pull request. This pipeline checks both the test suite and ruff linters pass before allowing PRs to be merged.  
+The project also has a CI pipeline that runs as a GitHub action on each pull request. This pipeline checks both the test suite and ruff linters pass before allowing PRs to be merged. In order to check consistency locally before pushing, you can set up a pre-push hook to your local git directory using the command:
+
+```bash
+./config/hooks/setup.sh
+```
