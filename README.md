@@ -170,5 +170,5 @@ uv run pytest
 The project also has a CI pipeline that runs as a GitHub action on each pull request. This pipeline checks both the test suite and ruff linters pass before allowing PRs to be merged. In order to check consistency locally before pushing, you can set up a pre-push hook to your local git directory using the command:
 
 ```bash
-./config/hooks/setup.sh
+git config core.hooksPath config/hooks
 ```
