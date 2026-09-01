@@ -34,7 +34,9 @@ The project was structured in a modular way and each core functionality of the c
 ├── config/                # Runtime configuration files
 │   ├── __init__.py
 │   ├── app_config.py      # Application configuration logic
-│   └── llm_config.json    # Default settings
+│   ├── llm_config.json    # Default settings
+│   └── hooks/             # Git hooks
+│       └── pre-push
 ├── src/                   # Application source code
 │   ├── __init__.py
 │   ├── backend/           # Backend API logic
