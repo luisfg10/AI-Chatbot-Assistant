@@ -8,8 +8,6 @@ import yaml
 from src.chatbot.core.context import BaseContextHelper
 
 # ------------------------------------------------------------------
-# Test BaseContextHelper
-
 # Example YAML cases
 
 VALID_YAML_CONTENT = (
@@ -20,8 +18,9 @@ LIST_YAML_CONTENT = "- first\n- second\n"
 EMPTY_YAML_CONTENT = ""
 INVALID_YAML_CONTENT = "key: [1, 2\n"  # unclosed flow sequence
 
-# Testing Class
 
+# ------------------------------------------------------------------
+# Testing Class
 
 class TestBaseContextHelper:
     """Test `BaseContextHelper`."""
@@ -36,18 +35,20 @@ class TestBaseContextHelper:
         """
         Build a factory for writing arbitrary content to a YAML file.
 
+        Written contents only exist in a temp dir used for tests.
+
         Parameters
         ----------
-            tmp_path: Path
-                Built-in pytest fixture for creating and managing
-                temp directories during tests.
+        tmp_path: Path
+            Built-in pytest fixture for creating and managing
+            temp directories during tests.
 
         Returns
         -------
-            Callable[..., Path]
-                A function taking `content` and an optional `filename`,
-                writing `content` to `tmp_path / filename` and returning
-                its path.
+        Callable[..., Path]
+            A function taking `content` and an optional `filename`,
+            writing `content` to `tmp_path / filename` and returning
+            its path.
         """
         def _write(content: str, filename: str = "test.yaml") -> Path:
             file_path = tmp_path / filename
@@ -64,6 +65,48 @@ class TestBaseContextHelper:
         """Test `file_caching=False` does not initialize a file store."""
         helper = BaseContextHelper(file_caching=False)
         assert not hasattr(helper, "file_store")
+
+    def test_caching_avoids_second_file_read(
+            self,
+            mocker: Any,
+            helper: BaseContextHelper,
+            write_yaml_file: Callable[..., Path]
+    ) -> None:
+        """
+        Test repeated calls with caching enabled parse the file only once.
+
+        Parameters
+        ----------
+        mocker: Any
+            A pytest mocker, which is resolved automatically
+            when invoking the tests.
+            Requires the dependency `pytest-mock`.
+
+        Notes
+        -----
+        `mocker.spy` wraps the real `yaml.safe_load` instead of replacing it,
+        so parsing happens normally while the call count is recorded.
+        """
+        file_path = write_yaml_file(VALID_YAML_CONTENT)
+        spy = mocker.spy(yaml, "safe_load")
+        helper.load_yaml_file(str(file_path))
+        helper.load_yaml_file(str(file_path))
+        helper.load_yaml_file(str(file_path))
+        assert spy.call_count == 1
+
+    def test_caching_disabled_reads_file_each_time(
+            self,
+            mocker: Any,
+            write_yaml_file: Callable[..., Path]
+    ) -> None:
+        """Test files are read each time with disabled caching."""
+        file_path = write_yaml_file(VALID_YAML_CONTENT)
+        helper = BaseContextHelper(file_caching=False)
+        spy = mocker.spy(yaml, "safe_load")
+        helper.load_yaml_file(str(file_path))
+        helper.load_yaml_file(str(file_path))
+        helper.load_yaml_file(str(file_path))
+        assert spy.call_count == 3
 
     def test_loads_dict_yaml(
             self,
@@ -112,47 +155,6 @@ class TestBaseContextHelper:
         file_path = write_yaml_file(EMPTY_YAML_CONTENT)
         content = helper.load_yaml_file(str(file_path))
         assert content == {}
-
-    def test_caching_avoids_second_file_read(
-            self,
-            mocker: Any,
-            helper: BaseContextHelper,
-            write_yaml_file: Callable[..., Path]
-    ) -> None:
-        """
-        Test repeated calls with caching enabled parse the file only once.
-
-        Parameters
-        ----------
-            mocker: Any
-                A pytest mocker, which is resolved automatically
-                when invoking the tests.
-                Requires the dependency `pytest-mock`.
-
-        Notes
-        -----
-        `mocker.spy` wraps the real `yaml.safe_load` instead of replacing it,
-        so parsing happens normally while the call count is recorded.
-        """
-        file_path = write_yaml_file(VALID_YAML_CONTENT)
-        spy = mocker.spy(yaml, "safe_load")
-        helper.load_yaml_file(str(file_path))
-        helper.load_yaml_file(str(file_path))
-        helper.load_yaml_file(str(file_path))
-        assert spy.call_count == 1
-
-    def test_caching_disabled_reads_file_each_time(
-            self,
-            mocker: Any,
-            write_yaml_file: Callable[..., Path]
-    ) -> None:
-        """Test files are read each time with disabled caching."""
-        file_path = write_yaml_file(VALID_YAML_CONTENT)
-        helper = BaseContextHelper(file_caching=False)
-        spy = mocker.spy(yaml, "safe_load")
-        helper.load_yaml_file(str(file_path))
-        helper.load_yaml_file(str(file_path))
-        assert spy.call_count == 2
 
     def test_retrieves_key_value(
             self,

@@ -43,7 +43,7 @@ class TestChatbotAssistant:
         """
         Build a supported personalities list.
 
-        Should match src/chatbot/context/system.yaml.
+        Should exist within src/chatbot/context/system.yaml.
         """
         return ["friendly", "professional"]
 
@@ -100,7 +100,7 @@ class TestChatbotAssistant:
                 available_models=available_models_dict,
                 provider_api_keys=provider_api_keys_dict,
                 default_config=default_config_dict,
-                supported_personalities="hello bob"
+                supported_personalities="sassy"
             )
 
     def test_init_invalid_available_models_raises(
@@ -122,7 +122,7 @@ class TestChatbotAssistant:
         # Invalid
         with pytest.raises(ValueError, match="available_models"):
             ChatbotAssistant(
-                available_models="hello bob",
+                available_models="cortana",
                 provider_api_keys=provider_api_keys_dict,
                 default_config=default_config_dict,
                 supported_personalities=supported_personalities_list
@@ -137,7 +137,7 @@ class TestChatbotAssistant:
     ) -> None:
         """Test an unsupported default personality falls back to the first supported one."""
         # Set invalid personality
-        default_config_dict["personality"] = "weird"
+        default_config_dict["personality"] = "icky"
 
         # Init class
         chatbot = ChatbotAssistant(
@@ -202,7 +202,6 @@ class TestChatbotAssistant:
 
         assert list(chatbot.tool_registry.keys()) == [tool_name]
         assert [item["function"]["name"] for item in chatbot.tool_schema] == [tool_name]
-        # available_tools keeps tracking the full set regardless of filtering
         assert len(chatbot.available_tools) >= 1
 
     def test_set_tools_empty_list_disables_all_tools(
@@ -221,7 +220,7 @@ class TestChatbotAssistant:
         chatbot: ChatbotAssistant
     ) -> None:
         """Test a name not present in the registry results in no active tools."""
-        chatbot.set_tools(tool_names=["not_a_real_tool"])
+        chatbot.set_tools(tool_names=["bob the builder's hammer"])
 
         assert chatbot.tool_registry == {}
         assert chatbot.tool_schema == []
@@ -258,15 +257,15 @@ class TestChatbotAssistant:
         self,
         chatbot: ChatbotAssistant
     ) -> None:
-        """Test messages are left untouched when below the compacting limit."""
+        """Test messages are left unchanged when below the compacting limit."""
         chatbot.messages = [
             {"role": "system", "content": "instructions"},
             {"role": "user", "content": "Hi"}
         ]
         original_messages = list(chatbot.messages)
 
-        chatbot._compact_messages()  # Should include escape logic if below limit
-
+        # Assumption: compacting method includes escape logic if below limit
+        chatbot._compact_messages()
         assert chatbot.messages == original_messages
 
     def test_compact_messages_summarizes_and_trims_when_above_limit(
@@ -274,8 +273,9 @@ class TestChatbotAssistant:
         chatbot: ChatbotAssistant,
         mocker: Any
     ) -> None:
-        """Test messages are summarized and trimmed to instructions + summary when above the limit."""
-        # Long messages list that triggers compacting
+        """Test messages are summarized when above the limit."""
+        # Messgaes list above config fixture limit (5 vs. 4)
+        # should trigger compacting
         chatbot.messages = [
             {"role": "system", "content": "instructions"},
             {"role": "user", "content": "Hi"},
@@ -283,23 +283,29 @@ class TestChatbotAssistant:
             {"role": "user", "content": "What's the weather?"},
             {"role": "assistant", "content": "It's sunny."}
         ]
-        # Patch next LLM API call, which should be for compacting.
+        # Patch next LLM API call, mimicking compacting summary
         mocker.patch.object(
             ChatCompletionsBaseAgent,
             "llm_api_call",
-            return_value=[{"role": "assistant", "content": "User asked about weather."}]
+            return_value=[{
+                "role": "assistant",
+                "content": "User asked about weather."
+            }]
         )
-
         # Run compacting
         chatbot._compact_messages()
 
-        # Check compacting ran successfully
+        # Check assertions
         assert len(chatbot.messages) == 2
-        assert chatbot.messages[0] == {"role": "system", "content": "instructions"}
+        assert chatbot.messages[0] == {
+            "role": "system",
+            "content": "instructions"
+        }
         assert "User asked about weather." in chatbot.messages[1]["content"]
-        assert chatbot.long_term_memory == [
-            {"role": "assistant", "content": "User asked about weather."}
-        ]
+        assert chatbot.long_term_memory == [{
+            "role": "assistant",
+            "content": "User asked about weather."
+        }]
 
     # ------------------------------------------------------------------
     # reset_memory

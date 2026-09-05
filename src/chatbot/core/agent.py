@@ -219,7 +219,10 @@ class ChatbotAssistant(ChatCompletionsBaseAgent, ChatbotContextHelper):
         )
         """
         # Track full available tool names regardless of filtering
-        self.available_tools = [item["function"]["name"] for item in tool_schema]
+        self.available_tools = [
+            item["function"]["name"]
+            for item in tool_schema
+        ]
 
         if tool_names is not None:
             tool_schema = [
