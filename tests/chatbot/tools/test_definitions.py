@@ -11,13 +11,7 @@ from src.chatbot.tools.definitions import (
 
 
 class TestGetCurrentDate:
-    """
-    Test the `get_current_date` function.
-
-    Notes
-    -----
-        TODO: Test the function actually returns today's date.
-    """
+    """Test the `get_current_date` function."""
 
     @pytest.fixture
     def result(self) -> str:
@@ -60,11 +54,9 @@ class TestEvaluateMathExpression:
     """
     Test the `evaluate_math_expression` function.
 
-    Notes
-    -----
-        * By design, this function is an agent-facing wrapper
-        of a more thorough implementation. Invalid expressions
-        are covered in `test_math.py`.
+    By design, this function is a simplified agent-facing wrapper
+    of a more thorough implementation. Testing of the backend logic
+    is covered more thoroughly in `.test_math.py`.
     """
 
     @pytest.mark.parametrize("expression, result", [
@@ -85,10 +77,10 @@ class TestEvaluateMathExpression:
 
         Parameters
         ----------
-            ...
-            roundoff: int = 2
-                The number of decimals to which to round the obtained result,
-                so that the test doesn't fail because of rounding errors.
+        ...
+        roundoff: int = 2
+            The number of decimals to which to round the obtained result,
+            so that the test doesn't fail because of rounding errors.
         """
         obtained_result = round(
             float(evaluate_math_expression(expression)), roundoff
@@ -119,10 +111,10 @@ class TestEvaluateMathExpression:
 
         Parameters
         ----------
-            ...
-            roundoff: int = 2
-                The number of decimals to which to round the obtained result,
-                so that the test doesn't fail because of rounding errors.
+        ...s
+        roundoff: int = 2
+            The number of decimals to which to round the obtained result,
+            so that the test doesn't fail because of rounding errors.
         """
         obtained_result = round(
             float(evaluate_math_expression(expression)), roundoff
@@ -135,7 +127,7 @@ class TestPerformWebSearch:
     """
     Test the perform_web_search function.
 
-    Does not cover integration tests with the actual external API.
+    All external API calls are mocked.
     """
 
     def test_correct_agent_wrapper_call(self, mocker: Any) -> None:
@@ -144,20 +136,17 @@ class TestPerformWebSearch:
 
         Parameters
         ----------
-            mocker: Any
-                A pytest mocker, which is resolved automatically
-                when invoking the tests.
-                Requires the dependency `pytest-mock`.
+        mocker: Any
+            A pytest mocker, which is resolved automatically
+            when invoking the tests.
+            Requires the dependency `pytest-mock`.
 
         Notes
         -----
         The mock.patch is done not to the web search tool itself,
         but on the method which makes the actual API call to Tavily.
-
-        This test is useful to ensure that the agent's tool remains
-        consistent with the actual method doing the search.
         """
-        # Patch actual calling function by mock
+        # Patch API-calling func
         mock_search = mocker.patch(
             "src.chatbot.tools.web_search.TavilyClient.search",
             return_value="mocked search result",

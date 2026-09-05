@@ -1,5 +1,5 @@
 """
-Tool definitions to be used by the AI agent.
+Agent-facing tool definitions (only).
 
 Consistent and valid numpy-style docstring documentation
 is mandatory so the tool schema builder parses the docstring

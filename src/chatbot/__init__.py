@@ -3,7 +3,9 @@ Module for defining the chatbot's context and logic.
 
 Notes
 -----
-    TODO: Change AI endpoint from OpenAI chat completions to responses
+    TODO: Change AI endpoint from OpenAI chat completions to responses.
+    Create a new base class for this while conserving chat completions.
+    Reference: https://developers.openai.com/api/docs/guides/migrate-to-responses
 
     TODO: Add web search tool and connect to frontend, possibly using an external
     API like SerpAPI or Tavily.
