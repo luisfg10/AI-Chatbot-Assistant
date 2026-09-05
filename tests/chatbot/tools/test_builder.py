@@ -14,7 +14,7 @@ def _get_definitions_tools() -> list:
     """
     Discover every function defined inside definitions.py.
 
-    Assumes that all defined functions inside the file are agent-facing
+    Assumes all defined functions inside the file are agent-facing
     tools and as such should be able to go through the tool-building
     function successfully.
 
@@ -109,7 +109,7 @@ def _mixed_signature_fn(
     """
     Combine values with an optional and an unmapped-type param.
 
-    Used for testing that reequired and optional parameters are
+    Used for testing that required and optional parameters are
     correctly mapped when building the tool schema.
 
     Parameters
@@ -141,14 +141,14 @@ class TestBuilder:
         Test functions with malformed docstrings raise DocstringError.
 
         Fails if either DocstringError is not raised, or it doesn't
-        contain the expected message.
+        contain the expected error message.
 
         Parameters
         ----------
-            fn: callable
-                The function to test.
-            match: str
-                String to match inside the exception message.
+        fn: callable
+            The function to test.
+        match: str
+            String to match inside the exception message.
         """
         with pytest.raises(DocstringError, match=match):
             build_tools([fn])
@@ -188,4 +188,4 @@ class TestBuilder:
         assert params["properties"]["a"]["type"] == "integer"
         assert params["properties"]["b"]["type"] == "number"
         assert params["properties"]["c"]["type"] == "string"  # unmapped-type fallback
-        json.dumps(schema)  # Check JSON convertability
+        json.dumps(schema)  # Check JSON convertability (raises if invalid)
