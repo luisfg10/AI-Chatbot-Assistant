@@ -20,7 +20,7 @@
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
+    --spacing-xl: 8rem;
 
     --radius-sm: 3px;
     --radius-md: 8px;
@@ -68,8 +68,7 @@ body { overflow: hidden; }
     left: 0;
     right: 0;
     height: var(--header-height);
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     display: flex;
     align-items: center;
     z-index: 100;
@@ -408,8 +407,7 @@ body { overflow: hidden; }
     left: 0;
     right: 0;
     height: var(--controls-height);
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     padding: 0 var(--spacing-xl);
     z-index: 50;
     display: flex;
