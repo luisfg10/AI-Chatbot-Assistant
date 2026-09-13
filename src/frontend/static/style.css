@@ -567,6 +567,33 @@ body { overflow: hidden; }
     display: none;
 }
 
+.control-dropdown-panel,
+.tools-dropdown-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.control-dropdown-panel::-webkit-scrollbar,
+.tools-dropdown-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-track,
+.tools-dropdown-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-thumb,
+.tools-dropdown-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-thumb:hover,
+.tools-dropdown-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
 .tool-item {
     display: flex;
     align-items: center;
