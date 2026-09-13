@@ -27,9 +27,8 @@
     --radius-lg: 14px;
     --radius-pill: 999px;
 
-    --font-mono: 'JetBrains Mono', monospace;
-    --font-label: 'Syne', sans-serif;
-    --font-body: 'Figtree', sans-serif;
+    --font-label: 'DM Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
 
     --base-font-size: 15px;
     --line-height: 1.65;
@@ -109,8 +108,8 @@ body { overflow: hidden; }
 
 .app-title {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.95rem;
+    font-family: var(--font-body);
+    font-size: 1.4rem;
     font-weight: 500;
     color: var(--text-primary);
     letter-spacing: -0.01em;
@@ -118,7 +117,7 @@ body { overflow: hidden; }
 
 .app-subtitle {
     margin: 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.7rem;
     font-weight: 400;
     color: var(--text-muted);
@@ -131,7 +130,7 @@ body { overflow: hidden; }
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.7rem;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -214,7 +213,7 @@ body { overflow: hidden; }
     background-color: rgba(0, 0, 0, 0.35);
     padding: 0.1rem 0.35rem;
     border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.82em;
     color: var(--accent-color);
     border: 1px solid rgba(255,255,255,0.06);
@@ -252,7 +251,7 @@ body { overflow: hidden; }
 }
 
 .message-time {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.68rem;
     color: var(--text-muted);
     margin-top: 4px;
@@ -273,7 +272,7 @@ body { overflow: hidden; }
     border: 1px solid var(--border-color);
     text-align: center;
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.75rem;
     letter-spacing: 0.04em;
     padding: 6px 14px;
@@ -432,7 +431,7 @@ body { overflow: hidden; }
 }
 
 .control-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 500;
     font-size: 0.7rem;
     color: var(--text-muted);
@@ -446,7 +445,7 @@ body { overflow: hidden; }
     border: 1px solid var(--border-mid);
     border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.8rem;
     padding: 4px 10px;
     cursor: pointer;
@@ -532,7 +531,7 @@ body { overflow: hidden; }
 }
 
 .tool-item-name {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.8rem;
     color: var(--text-primary);
     white-space: nowrap;
@@ -557,7 +556,7 @@ body { overflow: hidden; }
 }
 
 .tools-empty-state {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.75rem;
     color: var(--text-muted);
     padding: 8px;
@@ -569,7 +568,7 @@ body { overflow: hidden; }
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 4px 10px;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 500;
     font-size: 0.75rem;
     letter-spacing: 0.04em;
