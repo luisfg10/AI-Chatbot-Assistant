@@ -8,6 +8,7 @@
     --accent-color: #c9933a;
     --accent-dim: rgba(201, 147, 58, 0.12);
     --accent-hover: #e0a84a;
+    --controls-hover-bg: #232328;
     --border-color: rgba(255, 255, 255, 0.06);
     --border-mid: rgba(255, 255, 255, 0.1);
     --message-user-bg: #1c1a14;
@@ -20,18 +21,18 @@
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
+    --spacing-xl: 8rem;
 
     --radius-sm: 3px;
     --radius-md: 8px;
     --radius-lg: 14px;
     --radius-pill: 999px;
 
-    --font-mono: 'JetBrains Mono', monospace;
-    --font-label: 'Syne', sans-serif;
-    --font-body: 'Figtree', sans-serif;
+    --font-label: 'DM Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
 
     --base-font-size: 15px;
+    --controls-font-size: 0.8rem;
     --line-height: 1.65;
     --header-height: 58px;
     --controls-height: 52px;
@@ -69,8 +70,7 @@ body { overflow: hidden; }
     left: 0;
     right: 0;
     height: var(--header-height);
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     display: flex;
     align-items: center;
     z-index: 100;
@@ -109,16 +109,25 @@ body { overflow: hidden; }
 
 .app-title {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.95rem;
+    font-family: var(--font-body);
+    font-size: 1.4rem;
     font-weight: 500;
     color: var(--text-primary);
     letter-spacing: -0.01em;
+    transition: text-shadow 0.18s ease, -webkit-text-stroke 0.18s ease;
+}
+
+.app-title:hover {
+    -webkit-text-stroke: 0.05px var(--accent-color);
+    text-shadow:
+        0 0 10px var(--accent-color),
+        0 0 10px rgba(201, 147, 58, 0.7),
+        0 0 10px rgba(201, 147, 58, 0.35);
 }
 
 .app-subtitle {
     margin: 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.7rem;
     font-weight: 400;
     color: var(--text-muted);
@@ -131,7 +140,7 @@ body { overflow: hidden; }
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.7rem;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -214,7 +223,7 @@ body { overflow: hidden; }
     background-color: rgba(0, 0, 0, 0.35);
     padding: 0.1rem 0.35rem;
     border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.82em;
     color: var(--accent-color);
     border: 1px solid rgba(255,255,255,0.06);
@@ -252,7 +261,7 @@ body { overflow: hidden; }
 }
 
 .message-time {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.68rem;
     color: var(--text-muted);
     margin-top: 4px;
@@ -273,7 +282,7 @@ body { overflow: hidden; }
     border: 1px solid var(--border-color);
     text-align: center;
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 0.75rem;
     letter-spacing: 0.04em;
     padding: 6px 14px;
@@ -324,8 +333,7 @@ body { overflow: hidden; }
     bottom: var(--controls-height);
     left: 0;
     right: 0;
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     padding: 12px var(--spacing-xl);
     z-index: 50;
 }
@@ -410,12 +418,12 @@ body { overflow: hidden; }
     left: 0;
     right: 0;
     height: var(--controls-height);
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     padding: 0 var(--spacing-xl);
     z-index: 50;
     display: flex;
     align-items: center;
+    font-size: var(--controls-font-size);
 }
 
 .controls-container {
@@ -432,9 +440,9 @@ body { overflow: hidden; }
 }
 
 .control-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.7rem;
+    font-size: var(--controls-font-size);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -446,8 +454,8 @@ body { overflow: hidden; }
     border: 1px solid var(--border-mid);
     border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-family: var(--font-body);
+    font-size: var(--controls-font-size);
     padding: 4px 10px;
     cursor: pointer;
     transition: var(--transition);
@@ -461,11 +469,25 @@ body { overflow: hidden; }
     padding-right: 28px;
 }
 
-.control-select:hover { border-color: var(--border-mid); background-color: #232328; }
+.control-select:hover { border-color: var(--border-mid); background-color: var(--controls-hover-bg); }
+
+.control-select option,
+.control-select option:hover {
+    background-color: var(--controls-hover-bg);
+    color: var(--text-primary);
+}
 
 .control-select:focus {
     border-color: rgba(201, 147, 58, 0.45);
     box-shadow: 0 0 0 2px rgba(201, 147, 58, 0.08);
+}
+
+.visually-hidden-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .controls-divider {
@@ -477,6 +499,56 @@ body { overflow: hidden; }
 
 .tools-dropdown {
     position: relative;
+}
+
+.control-dropdown {
+    position: relative;
+}
+
+.control-dropdown-button {
+    min-width: 148px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888884' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    text-align: left;
+}
+
+.control-dropdown-panel {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    padding: 6px;
+    z-index: 60;
+}
+
+.control-dropdown-panel.hidden {
+    display: none;
+}
+
+.control-dropdown-option {
+    display: block;
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font: inherit;
+    padding: 6px 8px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.control-dropdown-option:hover,
+.control-dropdown-option[aria-selected="true"] {
+    background-color: var(--controls-hover-bg);
 }
 
 .tools-dropdown-button {
@@ -504,6 +576,33 @@ body { overflow: hidden; }
     display: none;
 }
 
+.control-dropdown-panel,
+.tools-dropdown-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.control-dropdown-panel::-webkit-scrollbar,
+.tools-dropdown-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-track,
+.tools-dropdown-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-thumb,
+.tools-dropdown-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.control-dropdown-panel::-webkit-scrollbar-thumb:hover,
+.tools-dropdown-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
 .tool-item {
     display: flex;
     align-items: center;
@@ -514,7 +613,7 @@ body { overflow: hidden; }
 }
 
 .tool-item:hover {
-    background-color: #232328;
+    background-color: var(--controls-hover-bg);
 }
 
 .tool-item-label {
@@ -532,8 +631,8 @@ body { overflow: hidden; }
 }
 
 .tool-item-name {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-family: var(--font-body);
+    font-size: var(--controls-font-size);
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -545,7 +644,7 @@ body { overflow: hidden; }
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--controls-font-size);
     line-height: 1;
     padding: 2px 4px;
     flex-shrink: 0;
@@ -557,8 +656,8 @@ body { overflow: hidden; }
 }
 
 .tools-empty-state {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-family: var(--font-body);
+    font-size: var(--controls-font-size);
     color: var(--text-muted);
     padding: 8px;
 }
@@ -569,9 +668,9 @@ body { overflow: hidden; }
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 4px 10px;
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.75rem;
+    font-size: var(--controls-font-size);
     letter-spacing: 0.04em;
     cursor: pointer;
     transition: var(--transition);
