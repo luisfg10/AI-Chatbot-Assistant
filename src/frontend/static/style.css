@@ -8,6 +8,7 @@
     --accent-color: #c9933a;
     --accent-dim: rgba(201, 147, 58, 0.12);
     --accent-hover: #e0a84a;
+    --controls-hover-bg: #232328;
     --border-color: rgba(255, 255, 255, 0.06);
     --border-mid: rgba(255, 255, 255, 0.1);
     --message-user-bg: #1c1a14;
@@ -31,6 +32,7 @@
     --font-body: 'DM Sans', sans-serif;
 
     --base-font-size: 15px;
+    --controls-font-size: 0.8rem;
     --line-height: 1.65;
     --header-height: 58px;
     --controls-height: 52px;
@@ -412,6 +414,7 @@ body { overflow: hidden; }
     z-index: 50;
     display: flex;
     align-items: center;
+    font-size: var(--controls-font-size);
 }
 
 .controls-container {
@@ -430,7 +433,7 @@ body { overflow: hidden; }
 .control-label {
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.7rem;
+    font-size: var(--controls-font-size);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -443,7 +446,7 @@ body { overflow: hidden; }
     border-radius: var(--radius-md);
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: var(--controls-font-size);
     padding: 4px 10px;
     cursor: pointer;
     transition: var(--transition);
@@ -457,11 +460,25 @@ body { overflow: hidden; }
     padding-right: 28px;
 }
 
-.control-select:hover { border-color: var(--border-mid); background-color: #232328; }
+.control-select:hover { border-color: var(--border-mid); background-color: var(--controls-hover-bg); }
+
+.control-select option,
+.control-select option:hover {
+    background-color: var(--controls-hover-bg);
+    color: var(--text-primary);
+}
 
 .control-select:focus {
     border-color: rgba(201, 147, 58, 0.45);
     box-shadow: 0 0 0 2px rgba(201, 147, 58, 0.08);
+}
+
+.visually-hidden-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .controls-divider {
@@ -473,6 +490,56 @@ body { overflow: hidden; }
 
 .tools-dropdown {
     position: relative;
+}
+
+.control-dropdown {
+    position: relative;
+}
+
+.control-dropdown-button {
+    min-width: 148px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888884' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    text-align: left;
+}
+
+.control-dropdown-panel {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    padding: 6px;
+    z-index: 60;
+}
+
+.control-dropdown-panel.hidden {
+    display: none;
+}
+
+.control-dropdown-option {
+    display: block;
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font: inherit;
+    padding: 6px 8px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.control-dropdown-option:hover,
+.control-dropdown-option[aria-selected="true"] {
+    background-color: var(--controls-hover-bg);
 }
 
 .tools-dropdown-button {
@@ -510,7 +577,7 @@ body { overflow: hidden; }
 }
 
 .tool-item:hover {
-    background-color: #232328;
+    background-color: var(--controls-hover-bg);
 }
 
 .tool-item-label {
@@ -529,7 +596,7 @@ body { overflow: hidden; }
 
 .tool-item-name {
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: var(--controls-font-size);
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -541,7 +608,7 @@ body { overflow: hidden; }
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--controls-font-size);
     line-height: 1;
     padding: 2px 4px;
     flex-shrink: 0;
@@ -554,7 +621,7 @@ body { overflow: hidden; }
 
 .tools-empty-state {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--controls-font-size);
     color: var(--text-muted);
     padding: 8px;
 }
@@ -567,7 +634,7 @@ body { overflow: hidden; }
     padding: 4px 10px;
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.75rem;
+    font-size: var(--controls-font-size);
     letter-spacing: 0.04em;
     cursor: pointer;
     transition: var(--transition);

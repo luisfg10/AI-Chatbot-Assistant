@@ -61,18 +61,38 @@
             <div class="controls-container">
                 <div class="controls-group">
                     <label for="modelSelect" class="control-label">Model</label>
-                    <select id="modelSelect" class="control-select">
-                        <option value="">Loading…</option>
-                    </select>
+                    <div class="control-dropdown" id="modelDropdown">
+                        <button
+                            type="button"
+                            id="modelDropdownButton"
+                            class="control-select control-dropdown-button"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                        >Loading…</button>
+                        <div id="modelDropdownPanel" class="control-dropdown-panel hidden" role="listbox"></div>
+                        <select id="modelSelect" class="visually-hidden-select" tabindex="-1" aria-hidden="true">
+                            <option value="">Loading…</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="controls-divider"></div>
 
                 <div class="controls-group">
                     <label for="personalitySelect" class="control-label">Personality</label>
-                    <select id="personalitySelect" class="control-select">
-                        <option value="">Loading…</option>
-                    </select>
+                    <div class="control-dropdown" id="personalityDropdown">
+                        <button
+                            type="button"
+                            id="personalityDropdownButton"
+                            class="control-select control-dropdown-button"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                        >Loading…</button>
+                        <div id="personalityDropdownPanel" class="control-dropdown-panel hidden" role="listbox"></div>
+                        <select id="personalitySelect" class="visually-hidden-select" tabindex="-1" aria-hidden="true">
+                            <option value="">Loading…</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="controls-divider"></div>

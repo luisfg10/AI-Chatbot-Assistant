@@ -11,6 +11,8 @@ const messageInput = document.getElementById("messageInput");
 const sendButton = document.getElementById("sendButton");
 const modelSelect = document.getElementById("modelSelect");
 const personalitySelect = document.getElementById("personalitySelect");
+const modelDropdown = document.getElementById("modelDropdown");
+const personalityDropdown = document.getElementById("personalityDropdown");
 const clearMemoryButton = document.getElementById("clearMemoryButton");
 const toolsDropdown = document.getElementById("toolsDropdown");
 const toolsDropdownButton = document.getElementById("toolsDropdownButton");
@@ -285,6 +287,29 @@ function populateDropdown(selectElement, items, selectedValue) {
         }
         selectElement.appendChild(option);
     });
+
+    const dropdown = selectElement.id === "modelSelect" ? modelDropdown : personalityDropdown;
+    const button = dropdown.querySelector(".control-dropdown-button");
+    const panel = dropdown.querySelector(".control-dropdown-panel");
+    button.textContent = selectedValue;
+    panel.innerHTML = "";
+
+    items.forEach((item) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = "control-dropdown-option";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String(item === selectedValue));
+        option.textContent = item;
+        option.addEventListener("click", () => {
+            selectElement.value = item;
+            button.textContent = item;
+            panel.classList.add("hidden");
+            button.setAttribute("aria-expanded", "false");
+            selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        panel.appendChild(option);
+    });
 }
 
 function renderToolsPanel() {
@@ -367,6 +392,15 @@ function toggleToolsPanel(forceClose = false) {
     toolsDropdownButton.setAttribute("aria-expanded", String(shouldOpen));
 }
 
+function toggleControlDropdown(dropdown, forceClose = false) {
+    const button = dropdown.querySelector(".control-dropdown-button");
+    const panel = dropdown.querySelector(".control-dropdown-panel");
+    const isOpen = !panel.classList.contains("hidden");
+    const shouldOpen = forceClose ? false : !isOpen;
+    panel.classList.toggle("hidden", !shouldOpen);
+    button.setAttribute("aria-expanded", String(shouldOpen));
+}
+
 // ============================================================================
 // Event Listeners
 // ============================================================================
@@ -415,6 +449,20 @@ function setupEventListeners() {
         }
     });
 
+    modelDropdown.querySelector(".control-dropdown-button").addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleControlDropdown(modelDropdown);
+        toggleControlDropdown(personalityDropdown, true);
+        toggleToolsPanel(true);
+    });
+
+    personalityDropdown.querySelector(".control-dropdown-button").addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleControlDropdown(personalityDropdown);
+        toggleControlDropdown(modelDropdown, true);
+        toggleToolsPanel(true);
+    });
+
     // Clear memory button
     clearMemoryButton.addEventListener("click", clearMemory);
 
@@ -428,6 +476,12 @@ function setupEventListeners() {
     document.addEventListener("click", (event) => {
         if (!toolsDropdown.contains(event.target)) {
             toggleToolsPanel(true);
+        }
+        if (!modelDropdown.contains(event.target)) {
+            toggleControlDropdown(modelDropdown, true);
+        }
+        if (!personalityDropdown.contains(event.target)) {
+            toggleControlDropdown(personalityDropdown, true);
         }
     });
 }
