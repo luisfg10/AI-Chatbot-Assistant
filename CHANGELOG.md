@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.  
 
+## [0.0.8] (WIP)  
+* Changed app font style, colors, font sizes and in general made several UI changes to make it more aesthetic.  
+
 ## [v0.0.7] (WIP)  
 * Allow user to specify which tools are allowed for calling from the UI. All tools are selected by default, and on each call they can be selected / deselected /deleted. Deselected tools can be selected again and viceversa, but deleted tools require restarting on a new session to bring them back.  
 * Changed `ChatbotAssistant.chatbot_call()` for the dunder method `__call__()` for more natural and concise syntax.  
